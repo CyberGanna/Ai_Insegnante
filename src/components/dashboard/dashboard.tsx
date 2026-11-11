@@ -382,7 +382,7 @@ export function Dashboard() {
       </aside>
 
       {/* Sul telefono il pulsante principale resta a portata di pollice. */}
-      <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-20 border-t border-line/70 bg-paper/95 px-4 py-3 backdrop-blur md:hidden">
+      <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-20 border-t border-line/70 bg-paper/95 px-4 pt-3 pb-6 backdrop-blur md:hidden">
         <div className="[&>button]:w-full">{startButton}</div>
       </div>
     </div>

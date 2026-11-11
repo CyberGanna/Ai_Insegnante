@@ -7,6 +7,7 @@ import { useAuth } from "./providers";
 import { SideModes } from "./side-modes";
 import {
   IconBooks,
+  IconFolder,
   IconHome,
   IconProgress,
   IconSessions,
@@ -59,6 +60,15 @@ export function Logo({
 const NAV = [
   { href: "/sessioni/", label: "Le mie sessioni", icon: IconSessions },
   { href: "/materiali/", label: "Materiali", icon: IconBooks },
+  { href: "/progressi/", label: "Progressi", icon: IconProgress },
+  { href: "/impostazioni/", label: "Impostazioni", icon: IconSettings },
+];
+
+/* Telefono: Progetti, Sessioni, "+" (nuova prova, cioè la dashboard), Progressi, Impostazioni. */
+const MOBILE_NAV = [
+  { href: "/progetti/", label: "Progetti", icon: IconFolder },
+  { href: "/sessioni/", label: "Sessioni", icon: IconSessions },
+  { href: "/", label: "Nuova", icon: IconHome },
   { href: "/progressi/", label: "Progressi", icon: IconProgress },
   { href: "/impostazioni/", label: "Impostazioni", icon: IconSettings },
 ];
@@ -195,7 +205,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <main
         id="contenuto"
-        className="glass-sheet m-2 min-h-[calc(100dvh-1rem)] min-w-0 rounded-[24px] pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:my-3 md:mr-3 md:ml-0 md:min-h-[calc(100dvh-1.5rem)] md:pb-0"
+        className="glass-sheet m-2 min-h-[calc(100dvh-1rem)] min-w-0 rounded-[24px] pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:my-3 md:mr-3 md:ml-0 md:min-h-[calc(100dvh-1.5rem)] md:pb-0"
       >
         {children}
       </main>
@@ -205,28 +215,52 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         aria-label="Principale"
         className="glass-bar fixed inset-x-0 bottom-0 z-30 border-t pb-[env(safe-area-inset-bottom)] md:hidden"
       >
-        <ul className="grid grid-cols-5">
-          {[{ href: "/", label: "Oggi", icon: IconHome }, ...NAV].map(
-            ({ href, label, icon: Icon }) => {
-              const active = isActive(pathname, href);
-              const short = label === "Le mie sessioni" ? "Sessioni" : label;
+        <ul className="grid grid-cols-5 items-center">
+          {MOBILE_NAV.map(({ href, label, icon: Icon }) => {
+            const active = isActive(pathname, href);
+            if (href === "/")
               return (
-                <li key={href}>
+                <li key={href} className="grid place-items-center">
                   <Link
-                    href={href}
+                    href="/"
+                    aria-label="Nuova prova"
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "flex h-16 flex-col items-center justify-center gap-1 text-[11px] leading-none",
-                      active ? "font-medium text-[#5eead4]" : "text-white/70",
+                      "-mt-5 grid size-14 place-items-center rounded-full bg-gradient-to-b from-[#33c2b1] to-[#0f766e] text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.45),0_10px_24px_-8px_rgb(45_212_191/0.8)] ring-4 ring-[#0a2633]/60 transition-transform active:scale-95",
+                      active && "ring-[#5eead4]/40",
                     )}
                   >
-                    <Icon size={22} />
-                    {short}
+                    <svg
+                      width="26"
+                      height="26"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
                   </Link>
                 </li>
               );
-            },
-          )}
+            return (
+              <li key={href}>
+                <Link
+                  href={href}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "flex h-16 flex-col items-center justify-center gap-1 text-[11px] leading-none",
+                    active ? "font-medium text-[#5eead4]" : "text-white/70",
+                  )}
+                >
+                  <Icon size={22} />
+                  {label}
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       </nav>
     </div>

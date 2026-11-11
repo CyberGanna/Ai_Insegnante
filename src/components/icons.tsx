@@ -182,3 +182,8 @@ export const IconCamera = (p: IconProps) => (
     <circle cx="12" cy="13" r="3.5" />
   </Svg>
 );
+export const IconFolder = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2v-10Z" />
+  </Svg>
+);

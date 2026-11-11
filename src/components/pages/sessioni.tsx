@@ -232,14 +232,18 @@ function lastScore(list: Session[]) {
   return done[0] ? formatScore(done[0].score, done[0].scoreMax) : null;
 }
 
-function Projects({
+export function Projects({
   mode,
   projects,
   sessions,
+  title = "Progetti",
+  action,
 }: {
   mode: ExamMode;
   projects: Project[];
   sessions: Session[];
+  title?: string;
+  action?: React.ReactNode;
 }) {
   const store = useStore();
   const router = useRouter();
@@ -274,12 +278,12 @@ function Projects({
   }
 
   return (
-    <section aria-labelledby="progetti" className="mt-8">
+    <section aria-labelledby={`progetti-${mode}`} className="mt-8">
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h2 id="progetti" className="text-[1.375rem] font-medium">
-          Progetti
+        <h2 id={`progetti-${mode}`} className="text-[1.375rem] font-medium">
+          {title}
         </h2>
-        <p className="text-sm text-ink-soft">{copy.hint}</p>
+        {action ?? <p className="text-sm text-ink-soft">{copy.hint}</p>}
       </div>
       <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {projects.map((p) => {
