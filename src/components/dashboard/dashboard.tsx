@@ -12,23 +12,27 @@ import { Button, Card, SectionTitle } from "@/components/ui";
 import { getAi } from "@/lib/ai";
 import { keys, useMaterials, useProfile, useSessions } from "@/lib/hooks";
 import { readMaterial } from "@/lib/materials";
-import type { Difficulty, Duration, ExamMode, Material, Voice } from "@/lib/types";
+import { examHref, type Difficulty, type Duration, type ExamFormat, type ExamMode, type Material, type Voice } from "@/lib/types";
 import { DropZone } from "./drop-zone";
-import { ExamSettings, ModePicker } from "./setup";
+import { ExamSettings, FormatPicker, ModePicker } from "./setup";
 
-function sessionTitle(mode: ExamMode, materials: Material[], jobPosting: string) {
+function sessionTitle(mode: ExamMode, format: ExamFormat, materials: Material[], jobPosting: string) {
+  const written = format === "scritto";
   if (mode === "colloquio") {
     const first =
       jobPosting
         .split(/\r?\n/)
         .find((l) => l.trim())
         ?.trim() ?? "";
-    return first ? `Colloquio: ${first.slice(0, 48)}` : "Colloquio di lavoro";
+    const label = written ? "Colloquio scritto" : "Colloquio";
+    return first ? `${label}: ${first.slice(0, 48)}` : written ? "Colloquio scritto" : "Colloquio di lavoro";
   }
   const names = materials.map((m) => m.name.replace(/\.[a-z0-9]+$/i, "")).slice(0, 2);
   const rest = materials.length - names.length;
   const base = names.join(", ") + (rest > 0 ? ` e altri ${rest}` : "");
-  return mode === "maturita" ? `Maturità: ${base}` : base || "Interrogazione";
+  if (mode === "maturita") return `${written ? "Maturità scritta" : "Maturità"}: ${base}`;
+  if (written) return base ? `Verifica: ${base}` : "Verifica scritta";
+  return base || "Interrogazione";
 }
 
 export function Dashboard() {
@@ -39,6 +43,7 @@ export function Dashboard() {
   const { data: sessions = [] } = useSessions();
 
   const [mode, setMode] = useState<ExamMode>("interrogazione");
+  const [format, setFormat] = useState<ExamFormat>("orale");
   const [jobPosting, setJobPosting] = useState("");
   const [duration, setDuration] = useState<Duration>(20);
   const [difficulty, setDifficulty] = useState<Difficulty>("medio");
@@ -89,6 +94,7 @@ export function Dashboard() {
       const session = await store.createSession(
         {
           mode,
+          format,
           durationMin: duration,
           difficulty,
           voice,
@@ -96,10 +102,10 @@ export function Dashboard() {
           materialIds: chosen.map((m) => m.id),
           focusTopics: [],
         },
-        sessionTitle(mode, chosen, jobPosting),
+        sessionTitle(mode, format, chosen, jobPosting),
       );
       await mutate(keys.sessions);
-      router.push(`/esame/?id=${session.id}`);
+      router.push(examHref(session));
     } catch (e) {
       setError({ text: e instanceof Error ? e.message : "Non riesco a creare la simulazione.", field: "materials" });
       setStarting(false);
@@ -187,6 +193,7 @@ export function Dashboard() {
             onJobPosting={setJobPosting}
             jobError={error?.field === "job" ? error.text : null}
           />
+          <FormatPicker value={format} mode={mode} onChange={setFormat} />
         </section>
 
         <section aria-labelledby="impostazioni-prova" className="mt-12">
@@ -199,11 +206,12 @@ export function Dashboard() {
               onDuration={setDuration}
               onDifficulty={setDifficulty}
               onVoice={setVoice}
+              showVoice={format === "orale"}
             />
           </Card>
           {getAi().isDemo ? (
             <p className="mt-3 text-[13px] leading-relaxed text-ink-faint">
-              Modalità prova: domande e voto sono simulati. Collega un fornitore AI per l’esaminatore vero.
+              Modalità prova: domande, correzione e voto sono simulati. Collega un fornitore AI per l’esaminatore vero.
             </p>
           ) : null}
         </section>

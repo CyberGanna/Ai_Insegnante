@@ -3,6 +3,15 @@
 import type { Attachment, JsonRequest } from "../_shared/llm.ts";
 import type { SessionContext } from "./index.ts";
 
+const WRITTEN_ROLE = {
+  interrogazione:
+    "Sei un insegnante di scuola superiore italiana che prepara e corregge una verifica scritta sul materiale qui sotto. Dai del tu.",
+  maturita:
+    "Sei la commissione della maturità italiana e prepari una prova scritta: un elaborato che collega più argomenti e discipline, più alcune domande aperte. Dai del tu.",
+  colloquio:
+    "Sei un selezionatore del personale che prepara e corregge un test scritto di selezione per la posizione dell'annuncio qui sotto: domande motivazionali, casi pratici e domande sui requisiti. Dai del Lei.",
+} as const;
+
 const MODE_ROLE = {
   interrogazione:
     "Sei un insegnante di scuola superiore italiana che interroga uno studente alla cattedra sul materiale qui sotto. Dai del tu.",
@@ -29,11 +38,14 @@ function systemPrompt(ctx: SessionContext) {
   const sources = materials.length
     ? materials.map((m, i) => `<materiale n="${i + 1}" nome="${m.name}">\n${m.text}\n</materiale>`).join("\n\n")
     : "(nessun materiale caricato)";
+  const written = session.format === "scritto";
   return [
-    MODE_ROLE[session.mode],
+    written ? WRITTEN_ROLE[session.mode] : MODE_ROLE[session.mode],
     DIFFICULTY[session.difficulty],
-    TONE[session.voice],
-    "Le domande vengono lette ad alta voce: scrivi frasi naturali da parlato, senza elenchi, simboli o markdown.",
+    written ? "" : TONE[session.voice],
+    written
+      ? "La prova è scritta: lo studente legge le domande sullo schermo e risponde per iscritto. Niente markdown."
+      : "Le domande vengono lette ad alta voce: scrivi frasi naturali da parlato, senza elenchi, simboli o markdown.",
     "Resta sul materiale fornito. Non inventare argomenti che non ci sono.",
     session.job_posting ? `<annuncio>\n${session.job_posting}\n</annuncio>` : "",
     `<materiali>\n${sources}\n</materiali>`,
@@ -44,11 +56,12 @@ function systemPrompt(ctx: SessionContext) {
 
 function transcript(ctx: SessionContext) {
   if (!ctx.turns.length) return "(nessuna domanda ancora)";
+  const kindLabel = { aperta: "", multipla: " (a crocette)", traccia: " (elaborato)" } as const;
   return ctx.turns
-    .map(
-      (t) =>
-        `Domanda ${t.idx + 1}${t.is_follow_up ? " (approfondimento)" : ""} [argomento: ${t.topic}]: ${t.question}\nRisposta: ${t.answer ?? "(nessuna risposta)"}`,
-    )
+    .map((t) => {
+      const options = t.kind === "multipla" && t.options?.length ? `\nOpzioni: ${t.options.map((o) => `«${o}»`).join(" | ")}` : "";
+      return `Domanda ${t.idx + 1}${t.is_follow_up ? " (approfondimento)" : ""}${kindLabel[t.kind ?? "aperta"]} [argomento: ${t.topic}]: ${t.question}${options}\nRisposta: ${t.answer ?? "(nessuna risposta)"}`;
+    })
     .join("\n\n");
 }
 
@@ -82,6 +95,64 @@ export function questionPrompt(ctx: SessionContext, elapsedSec: number): JsonReq
       `- Non fare più di due approfondimenti di fila sullo stesso argomento (ora sono ${Math.max(0, followUps)}).`,
       "- Altrimenti passa a un argomento nuovo del materiale, non ancora toccato.",
       "- Se è la prima domanda, apri in modo naturale, con un breve saluto.",
+    ]
+      .filter(Boolean)
+      .join("\n"),
+  };
+}
+
+export const TEST_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["questions"],
+  properties: {
+    questions: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["question", "topic", "kind", "options"],
+        properties: {
+          question: { type: "string", description: "Il testo della domanda o della traccia." },
+          topic: { type: "string", description: "L'argomento, in poche parole." },
+          kind: { type: "string", enum: ["aperta", "multipla", "traccia"] },
+          options: {
+            type: "array",
+            items: { type: "string" },
+            description: "Solo per 'multipla': 4 opzioni, una sola corretta, in ordine casuale. Vuoto per le altre.",
+          },
+        },
+      },
+    },
+  },
+};
+
+/** Quante domande, in base al tempo: circa 2-3 minuti per domanda aperta. */
+const WRITTEN_COUNT: Record<number, string> = {
+  10: "5 domande",
+  20: "8 domande",
+  40: "12 domande",
+};
+
+export function testPrompt(ctx: SessionContext): JsonRequest {
+  const { mode, duration_min } = ctx.session;
+  const count = WRITTEN_COUNT[duration_min] ?? "8 domande";
+  const mix = {
+    interrogazione: `Prepara una verifica di ${count}: circa metà a crocette (4 opzioni, una sola corretta) e metà aperte. Copri argomenti diversi del materiale.`,
+    maturita: `Prepara una prova da ${duration_min} minuti: la prima voce è una traccia di elaborato (kind "traccia") che chiede di collegare almeno tre argomenti del materiale e altre discipline; poi ${duration_min >= 40 ? "4" : duration_min >= 20 ? "3" : "2"} domande aperte.`,
+    colloquio: `Prepara un test di selezione di ${count}: domande aperte su motivazione ed esperienza, casi pratici sul ruolo e alcune domande a crocette (4 opzioni) sui requisiti tecnici dell'annuncio.`,
+  }[mode];
+  return {
+    system: systemPrompt(ctx),
+    schema: TEST_SCHEMA,
+    user: [
+      ctx.studentName ? `Lo studente si chiama ${ctx.studentName}.` : "",
+      ctx.session.focus_topics.length
+        ? `È una prova di ripasso: concentrati su questi argomenti deboli: ${ctx.session.focus_topics.join(", ")}.`
+        : "",
+      mix,
+      "Le domande aperte indicano quanto scrivere (per esempio 'in 5-8 righe'). Nelle domande a crocette le opzioni sbagliate devono essere plausibili, non ovvie, e tutte di lunghezza simile.",
+      "Resta sul materiale: ogni risposta corretta deve essere ricavabile da lì.",
     ]
       .filter(Boolean)
       .join("\n"),
@@ -122,9 +193,14 @@ export function evaluationPrompt(ctx: SessionContext): JsonRequest {
     user: [
       `La prova è finita. Valuta lo studente con un voto da 0 a ${max}${max === 10 ? " (mezzi voti ammessi, 6 è la sufficienza)" : " (60 è la sufficienza)"}.`,
       "Basati solo sulle risposte date: contenuto, correttezza, chiarezza, capacità di collegare. Una domanda senza risposta pesa negativamente.",
+      ctx.session.format === "scritto"
+        ? "È una prova scritta: valuta anche ordine, lessico e ortografia. Per le domande a crocette il commento dice se la scelta è giusta e la risposta modello indica l'opzione corretta e perché. Pesa l'elaborato più delle singole domande."
+        : "",
       "Per ogni domanda scrivi un commento e una risposta modello basata sul materiale. Rivolgiti allo studente con il tu (con il Lei nel colloquio).",
-      `Conversazione:\n${transcript(ctx)}`,
-    ].join("\n\n"),
+      `${ctx.session.format === "scritto" ? "Prova consegnata" : "Conversazione"}:\n${transcript(ctx)}`,
+    ]
+      .filter(Boolean)
+      .join("\n\n"),
   };
 }
 

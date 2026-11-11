@@ -15,7 +15,9 @@ Senza variabili d'ambiente l'app parte in **modalità prova**: materiali e sessi
 ## Come è fatta
 
 - **Next.js (App Router) + TypeScript + Tailwind**, con `output: "export"`: l'app è solo HTML/CSS/JS, pronta da impacchettare con Capacitor per iOS e Android.
-- **Pagine**: `/` dashboard, `/esame?id=` simulazione a schermo pieno, `/report?id=` report finale, `/sessioni`, `/materiali`, `/progressi`, `/impostazioni`, `/accedi`.
+- **Due formati per ogni prova**: *a voce* (`/esame?id=`, una domanda alla volta con approfondimenti) e *per iscritto* (`/scritto?id=`, l'AI prepara un compito intero con domande aperte, a crocette o una traccia di elaborato; lo studente consegna e l'AI corregge). Il report è lo stesso.
+- **Materiali**: PDF, Word, testo, foto (anche scritte a mano), link, e audio o video di una lezione (MP3, M4A, WAV, MP4, WebM, fino a 25 MB), che vengono trascritti e usati come appunti.
+- **Pagine**: `/` dashboard, `/esame?id=` prova orale a schermo pieno, `/scritto?id=` prova scritta, `/report?id=` report finale, `/sessioni`, `/materiali`, `/progressi`, `/impostazioni`, `/accedi`.
 - **Dati** (`src/lib/store`): un'unica interfaccia `DataStore` con due implementazioni, Supabase e locale.
 - **AI e voce** (`src/lib/ai`): tre parti sostituibili dietro `AiProvider`: `examiner` (domande, voto, lettura materiali), `stt` (trascrizione), `tts` (voce). Ognuna può essere `remote` (Edge Functions) o di prova/browser.
 
@@ -32,8 +34,10 @@ Senza variabili d'ambiente l'app parte in **modalità prova**: materiali e sessi
 | Parte | Variabile | Predefinito | Alternativa |
 |---|---|---|---|
 | Cervello (domande, voto, lettura PDF e foto) | `LLM_PROVIDER` | `anthropic` (Claude Sonnet 5.5) | `openai` |
-| Trascrizione | `STT_PROVIDER` | `openai` (gpt-4o-mini-transcribe) | |
+| Trascrizione (risposte a voce, audio e video caricati) | `STT_PROVIDER` | `openai` (gpt-4o-mini-transcribe) | |
 | Voce | `TTS_PROVIDER` | `elevenlabs` (voce calma e severa) | `openai` |
+
+Audio e video: il servizio di trascrizione accetta file fino a 25 MB e ha un limite di durata per file; per lezioni lunghe conviene caricare solo l'audio o dividerlo in parti. I video .mov dell'iPhone vanno esportati in MP4.
 
 Per aggiungere un fornitore basta implementare l'interfaccia in `supabase/functions/_shared/llm.ts` o `speech.ts`.
 

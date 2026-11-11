@@ -1,12 +1,30 @@
 "use client";
 
 import { useId, useState } from "react";
-import { IconBriefcase, IconChat, IconLaurel, IconSpeaker } from "@/components/icons";
+import {
+  IconBriefcase,
+  IconChat,
+  IconLaurel,
+  IconMic,
+  IconPencil,
+  IconSpeaker,
+} from "@/components/icons";
 import { cn } from "@/components/ui";
 import { getAi } from "@/lib/ai";
-import type { Difficulty, Duration, ExamMode, Voice } from "@/lib/types";
+import type {
+  Difficulty,
+  Duration,
+  ExamFormat,
+  ExamMode,
+  Voice,
+} from "@/lib/types";
 
-const MODES: { value: ExamMode; title: string; text: string; icon: typeof IconChat }[] = [
+const MODES: {
+  value: ExamMode;
+  title: string;
+  text: string;
+  icon: typeof IconChat;
+}[] = [
   {
     value: "interrogazione",
     title: "Interrogazione / verifica",
@@ -54,7 +72,9 @@ export function ModePicker({
               key={v}
               className={cn(
                 "group relative flex cursor-pointer flex-col rounded-[var(--radius-card)] bg-card p-4 shadow-[var(--shadow-card)] ring-1 transition-[box-shadow,background-color] has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-teal sm:p-5",
-                checked ? "ring-2 ring-teal" : "ring-transparent hover:shadow-[var(--shadow-lift)]",
+                checked
+                  ? "ring-2 ring-teal"
+                  : "ring-transparent hover:shadow-[var(--shadow-lift)]",
               )}
             >
               <input
@@ -74,9 +94,13 @@ export function ModePicker({
                 >
                   <Icon size={20} />
                 </span>
-                <span className="font-serif text-[1.075rem] leading-snug font-medium text-ink sm:mt-1">{title}</span>
+                <span className="font-serif text-[1.075rem] leading-snug font-medium text-ink sm:mt-1">
+                  {title}
+                </span>
               </span>
-              <span className="mt-2 text-sm leading-relaxed text-ink-soft">{text}</span>
+              <span className="mt-2 text-sm leading-relaxed text-ink-soft">
+                {text}
+              </span>
             </label>
           );
         })}
@@ -84,11 +108,15 @@ export function ModePicker({
 
       {value === "colloquio" ? (
         <div className="mt-4">
-          <label htmlFor={postingId} className="text-[15px] font-medium text-ink">
+          <label
+            htmlFor={postingId}
+            className="text-[15px] font-medium text-ink"
+          >
             Annuncio di lavoro
           </label>
           <p className="mt-0.5 text-sm text-ink-soft">
-            Incolla il testo dell’annuncio: le domande seguiranno ruolo, requisiti e azienda.
+            Incolla il testo dell’annuncio: le domande seguiranno ruolo,
+            requisiti e azienda.
           </p>
           <textarea
             id={postingId}
@@ -112,6 +140,97 @@ export function ModePicker({
   );
 }
 
+const FORMATS: {
+  value: ExamFormat;
+  title: string;
+  text: Record<ExamMode, string>;
+  icon: typeof IconMic;
+}[] = [
+  {
+    value: "orale",
+    title: "A voce",
+    icon: IconMic,
+    text: {
+      interrogazione:
+        "L’esaminatore ti fa una domanda alla volta e tu rispondi parlando.",
+      maturita:
+        "La commissione ti propone uno spunto e ti ascolta mentre colleghi le materie.",
+      colloquio: "Il selezionatore ti fa le domande e tu rispondi parlando.",
+    },
+  },
+  {
+    value: "scritto",
+    title: "Per iscritto",
+    icon: IconPencil,
+    text: {
+      interrogazione:
+        "L’AI prepara una verifica con domande aperte e a crocette. La consegni e lei la corregge.",
+      maturita:
+        "Un elaborato su più argomenti e alcune domande aperte, da consegnare e far correggere.",
+      colloquio:
+        "Un test scritto da candidato: domande sul ruolo, casi pratici e risposte a scelta.",
+    },
+  },
+];
+
+export function FormatPicker({
+  value,
+  mode,
+  onChange,
+}: {
+  value: ExamFormat;
+  mode: ExamMode;
+  onChange: (f: ExamFormat) => void;
+}) {
+  const name = useId();
+  return (
+    <fieldset className="mt-4">
+      <legend className="mb-2 text-[15px] font-medium text-ink">
+        Come vuoi rispondere
+      </legend>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {FORMATS.map(({ value: v, title, text, icon: Icon }) => {
+          const checked = v === value;
+          return (
+            <label
+              key={v}
+              className={cn(
+                "flex cursor-pointer items-start gap-3 rounded-[var(--radius-card)] bg-card p-4 shadow-[var(--shadow-card)] ring-1 transition-[box-shadow] has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-teal",
+                checked
+                  ? "ring-2 ring-teal"
+                  : "ring-transparent hover:shadow-[var(--shadow-lift)]",
+              )}
+            >
+              <input
+                type="radio"
+                name={name}
+                value={v}
+                checked={checked}
+                onChange={() => onChange(v)}
+                className="sr-only"
+              />
+              <span
+                className={cn(
+                  "grid size-9 shrink-0 place-items-center rounded-full transition-colors",
+                  checked ? "bg-teal text-white" : "bg-paper text-ink-soft",
+                )}
+              >
+                <Icon size={18} />
+              </span>
+              <span className="min-w-0">
+                <span className="block font-medium text-ink">{title}</span>
+                <span className="mt-0.5 block text-sm leading-relaxed text-ink-soft">
+                  {text[mode]}
+                </span>
+              </span>
+            </label>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
+
 function Segmented<T extends string | number>({
   legend,
   options,
@@ -128,7 +247,9 @@ function Segmented<T extends string | number>({
   const name = useId();
   return (
     <fieldset className="min-w-0">
-      <legend className="mb-2 text-[15px] font-medium text-ink">{legend}</legend>
+      <legend className="mb-2 text-[15px] font-medium text-ink">
+        {legend}
+      </legend>
       <div className="grid auto-cols-fr grid-flow-col gap-1 rounded-full bg-paper-deep p-1">
         {options.map((o) => {
           const checked = o.value === value;
@@ -137,7 +258,9 @@ function Segmented<T extends string | number>({
               key={String(o.value)}
               className={cn(
                 "relative flex h-10 cursor-pointer items-center justify-center rounded-full px-2 text-[15px] whitespace-nowrap transition-[background-color,color,box-shadow] has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-1 has-[:focus-visible]:outline-teal",
-                checked ? "bg-card font-medium text-ink shadow-[var(--shadow-card)]" : "text-ink-soft hover:text-ink",
+                checked
+                  ? "bg-card font-medium text-ink shadow-[var(--shadow-card)]"
+                  : "text-ink-soft hover:text-ink",
               )}
             >
               <input
@@ -159,7 +282,8 @@ function Segmented<T extends string | number>({
 }
 
 const SAMPLE: Record<Voice, string> = {
-  calma: "Ciao, sono il tuo esaminatore. Prenditi il tempo che ti serve per rispondere.",
+  calma:
+    "Ciao, sono il tuo esaminatore. Prenditi il tempo che ti serve per rispondere.",
   severa: "Buongiorno. Cominciamo. Risponda in modo preciso, per favore.",
 };
 
@@ -170,7 +294,9 @@ export function ExamSettings({
   onDuration,
   onDifficulty,
   onVoice,
+  showVoice = true,
 }: {
+  showVoice?: boolean;
   duration: Duration;
   difficulty: Difficulty;
   voice: Voice;
@@ -218,25 +344,27 @@ export function ExamSettings({
           { value: "esigente", label: "Esigente" },
         ]}
       />
-      <Segmented<Voice>
-        legend="Voce dell’esaminatore"
-        value={voice}
-        onChange={onVoice}
-        options={[
-          { value: "calma", label: "Calma" },
-          { value: "severa", label: "Severa" },
-        ]}
-        aside={
-          <button
-            type="button"
-            onClick={preview}
-            className="mt-2 -ml-2 inline-flex h-8 items-center gap-1.5 rounded-full px-2 text-sm font-medium text-teal hover:bg-teal-soft"
-          >
-            <IconSpeaker size={16} />
-            {playing ? "Ferma l’anteprima" : "Ascolta la voce"}
-          </button>
-        }
-      />
+      {showVoice ? (
+        <Segmented<Voice>
+          legend="Voce dell’esaminatore"
+          value={voice}
+          onChange={onVoice}
+          options={[
+            { value: "calma", label: "Calma" },
+            { value: "severa", label: "Severa" },
+          ]}
+          aside={
+            <button
+              type="button"
+              onClick={preview}
+              className="mt-2 -ml-2 inline-flex h-8 items-center gap-1.5 rounded-full px-2 text-sm font-medium text-teal hover:bg-teal-soft"
+            >
+              <IconSpeaker size={16} />
+              {playing ? "Ferma l’anteprima" : "Ascolta la voce"}
+            </button>
+          }
+        />
+      ) : null}
     </div>
   );
 }

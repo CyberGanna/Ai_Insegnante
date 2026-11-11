@@ -1,12 +1,14 @@
-// L'esaminatore. Tre azioni:
-//   read      legge un materiale (PDF, DOCX, foto, link) e ne salva il testo
-//   question  sceglie la prossima domanda (nuova o di approfondimento)
+// L'esaminatore. Quattro azioni:
+//   read      legge un materiale (PDF, DOCX, foto, audio, video, link) e ne salva il testo
+//   question  sceglie la prossima domanda della prova orale (nuova o di approfondimento)
+//   test      prepara tutte le domande della prova scritta
 //   evaluate  dà il voto e prepara il report
 import mammoth from "npm:mammoth@1.13.0";
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.119.0";
 import { HttpError, json, serve, userClient } from "../_shared/http.ts";
 import { getLlm, type Attachment } from "../_shared/llm.ts";
-import { evaluationPrompt, EVALUATION_SCHEMA, questionPrompt, QUESTION_SCHEMA, READ_SCHEMA, readPrompt } from "./prompts.ts";
+import { transcribe } from "../_shared/speech.ts";
+import { evaluationPrompt, questionPrompt, readPrompt, testPrompt } from "./prompts.ts";
 
 const MAX_MATERIAL_CHARS = 120_000;
 
@@ -20,6 +22,10 @@ serve(async (req) => {
     case "question": {
       const ctx = await loadSession(supabase, body.sessionId ?? "");
       return json(await getLlm().json(questionPrompt(ctx, body.elapsedSec ?? 0)));
+    }
+    case "test": {
+      const ctx = await loadSession(supabase, body.sessionId ?? "");
+      return json(await getLlm().json({ ...testPrompt(ctx), maxTokens: 8000 }));
     }
     case "evaluate": {
       const ctx = await loadSession(supabase, body.sessionId ?? "");
@@ -111,6 +117,11 @@ async function readMaterial(supabase: SupabaseClient, materialId: string) {
     const buf = await file.data.arrayBuffer();
 
     if (m.kind === "text") return done(new TextDecoder().decode(buf));
+    if (m.kind === "audio" || m.kind === "video") {
+      // Il servizio di trascrizione accetta anche MP4 e WebM: ne usa solo l'audio.
+      const type = file.data.type || (m.kind === "video" ? "video/mp4" : "audio/mpeg");
+      return done(await transcribe(new File([buf], m.name, { type })));
+    }
     if (m.kind === "docx") {
       const { value } = await mammoth.extractRawText({ arrayBuffer: buf } as never);
       return done(value);
@@ -139,6 +150,7 @@ export interface SessionContext {
   studentName: string;
   session: {
     mode: "interrogazione" | "maturita" | "colloquio";
+    format: "orale" | "scritto";
     duration_min: number;
     difficulty: "base" | "medio" | "esigente";
     voice: "calma" | "severa";
@@ -147,7 +159,15 @@ export interface SessionContext {
     score_max: 10 | 100;
   };
   materials: { name: string; text: string }[];
-  turns: { idx: number; question: string; topic: string; is_follow_up: boolean; answer: string | null }[];
+  turns: {
+    idx: number;
+    question: string;
+    topic: string;
+    is_follow_up: boolean;
+    kind: "aperta" | "multipla" | "traccia";
+    options: string[] | null;
+    answer: string | null;
+  }[];
 }
 
 async function loadSession(supabase: SupabaseClient, sessionId: string): Promise<SessionContext> {
@@ -158,7 +178,7 @@ async function loadSession(supabase: SupabaseClient, sessionId: string): Promise
     ids.length
       ? supabase.from("materials").select("name, extracted_text").in("id", ids)
       : Promise.resolve({ data: [] as { name: string; extracted_text: string | null }[] }),
-    supabase.from("turns").select("idx, question, topic, is_follow_up, answer").eq("session_id", sessionId).order("idx"),
+    supabase.from("turns").select("idx, question, topic, is_follow_up, kind, options, answer").eq("session_id", sessionId).order("idx"),
     supabase.from("profiles").select("name").maybeSingle(),
   ]);
   return {

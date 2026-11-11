@@ -8,6 +8,7 @@ import type {
   NextQuestion,
   SpeechToText,
   TextToSpeech,
+  WrittenQuestion,
 } from "./types";
 
 /*
@@ -24,6 +25,12 @@ export function createRemoteExaminer(): Examiner {
         sessionId: ctx.session.id,
         elapsedSec: ctx.elapsedSec,
       })) as NextQuestion;
+    },
+    async writtenTest(ctx) {
+      const res = (await callFunction("esaminatore", { action: "test", sessionId: ctx.session.id })) as {
+        questions: WrittenQuestion[];
+      };
+      return res.questions.map((q) => ({ ...q, options: q.kind === "multipla" ? (q.options ?? []) : null }));
     },
     async evaluate(ctx) {
       return (await callFunction("esaminatore", { action: "evaluate", sessionId: ctx.session.id })) as Evaluation;

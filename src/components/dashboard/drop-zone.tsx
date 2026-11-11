@@ -101,7 +101,8 @@ export function DropZone() {
           Trascina qui appunti, PDF, foto o incolla un link
         </p>
         <p id={hintId} className="mx-auto mt-2 max-w-md text-sm text-ink-soft">
-          PDF, Word (.docx), testo e foto di pagine scritte a mano o stampate. Fino a 20 MB per file.
+          PDF, Word, testo, foto di pagine scritte a mano o stampate (fino a 20 MB). Audio e video di una lezione
+          (MP3, M4A, MP4, fino a 25 MB): li trascriviamo e li usiamo come appunti.
         </p>
 
         <div className="mt-6 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">

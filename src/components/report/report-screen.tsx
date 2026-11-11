@@ -8,7 +8,7 @@ import { useStore } from "@/components/providers";
 import { IconArrowLeft, IconCheck } from "@/components/icons";
 import { Button, ButtonLink, Card, cn, formatDateTime } from "@/components/ui";
 import { keys } from "@/lib/hooks";
-import { MODE_LABEL } from "@/lib/types";
+import { examHref, modeLabel } from "@/lib/types";
 
 export function ReportScreen() {
   const id = useSearchParams().get("id") ?? "";
@@ -36,7 +36,7 @@ export function ReportScreen() {
         </p>
         <div className="mt-6 flex justify-center gap-3">
           {data?.session ? (
-            <ButtonLink href={`/esame/?id=${data.session.id}`}>Riprendi la simulazione</ButtonLink>
+            <ButtonLink href={examHref(data.session)}>Riprendi la simulazione</ButtonLink>
           ) : null}
           <ButtonLink href="/" variant="secondary">
             Torna alla dashboard
@@ -60,6 +60,7 @@ export function ReportScreen() {
       const next = await store.createSession(
         {
           mode: session!.mode,
+          format: session!.format,
           durationMin: session!.durationMin,
           difficulty: session!.difficulty,
           voice: session!.voice,
@@ -70,7 +71,7 @@ export function ReportScreen() {
         `Ripasso: ${report!.weakTopics.slice(0, 2).join(", ") || session!.title}`.slice(0, 80),
       );
       await mutate(keys.sessions);
-      router.push(`/esame/?id=${next.id}`);
+      router.push(examHref(next));
     } catch {
       setRetrying(false);
     }
@@ -101,7 +102,7 @@ export function ReportScreen() {
         </div>
         <div>
           <p className="text-sm text-ink-faint">
-            {MODE_LABEL[session.mode]}, {formatDateTime(session.startedAt)}
+            {modeLabel(session)}, {formatDateTime(session.startedAt)}
           </p>
           <h1 className="mt-1 text-[1.875rem] leading-tight font-medium sm:text-[2.25rem]">{session.title}</h1>
           <p className="mt-3 max-w-prose leading-relaxed text-ink-soft">{report.summary}</p>
@@ -164,15 +165,16 @@ export function ReportScreen() {
               <Card className="p-5 sm:p-6">
                 <p className="text-[13px] text-ink-faint">
                   {i + 1}. {t.isFollowUp ? "Approfondimento" : t.topic || "Domanda"}
+                  {t.kind === "multipla" ? ", a crocette" : t.kind === "traccia" ? ", elaborato" : ""}
                 </p>
-                <h3 className="mt-1.5 text-[1.2rem] leading-snug font-medium">{t.question}</h3>
+                  <h3 className="mt-1.5 text-[1.2rem] leading-snug font-medium">{t.question}</h3>
 
                 <div className="mt-5 grid gap-4 lg:grid-cols-2">
                   <div>
                     <p className="text-sm font-medium text-ink-soft">La tua risposta</p>
                     <p
                       className={cn(
-                        "mt-1.5 leading-relaxed [overflow-wrap:anywhere]",
+                        "mt-1.5 leading-relaxed whitespace-pre-line [overflow-wrap:anywhere]",
                         t.answer ? "text-ink" : "text-ink-faint italic",
                       )}
                     >

@@ -95,12 +95,18 @@ async function deleteFile(id: string) {
   }
 }
 
+// Sessioni e turni salvati prima della prova scritta non hanno i campi nuovi.
+const withSessionDefaults = (s: Session): Session => ({ ...s, format: s.format ?? "orale" });
+const withTurnDefaults = (t: Turn): Turn => ({ ...t, kind: t.kind ?? "aperta", options: t.options ?? null });
+
 export function kindForFile(file: File): MaterialKind | null {
   const name = file.name.toLowerCase();
   if (file.type === "application/pdf" || name.endsWith(".pdf")) return "pdf";
   if (file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || name.endsWith(".docx"))
     return "docx";
   if (file.type.startsWith("image/")) return "image";
+  if (file.type.startsWith("audio/") || /\.(mp3|m4a|wav|ogg|oga|flac|aac)$/.test(name)) return "audio";
+  if (file.type.startsWith("video/") || /\.(mp4|webm|mov|m4v)$/.test(name)) return "video";
   if (file.type.startsWith("text/") || name.endsWith(".txt") || name.endsWith(".md")) return "text";
   return null;
 }
@@ -177,11 +183,12 @@ export function createLocalStore(): DataStore {
     },
 
     async listSessions(limit) {
-      const all = [...read().sessions].sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+      const all = read().sessions.map(withSessionDefaults).sort((a, b) => b.startedAt.localeCompare(a.startedAt));
       return limit ? all.slice(0, limit) : all;
     },
     async getSession(id) {
-      return read().sessions.find((s) => s.id === id) ?? null;
+      const found = read().sessions.find((s) => s.id === id);
+      return found ? withSessionDefaults(found) : null;
     },
     async createSession(config, title) {
       const session: Session = {
@@ -208,6 +215,7 @@ export function createLocalStore(): DataStore {
     async listTurns(sessionId) {
       return read()
         .turns.filter((t) => t.sessionId === sessionId)
+        .map(withTurnDefaults)
         .sort((a, b) => a.index - b.index);
     },
     async addTurn(turn) {

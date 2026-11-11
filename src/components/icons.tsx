@@ -149,3 +149,26 @@ export const IconKeyboard = (p: IconProps) => (
     <path d="M7 10h.01M10.5 10h.01M14 10h.01M17 10h.01M8 14h8" />
   </Svg>
 );
+export const IconVideo = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="3" y="6" width="13" height="12" rx="2" />
+    <path d="m16 10.5 5-3v9l-5-3" />
+  </Svg>
+);
+export const IconWave = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2" />
+  </Svg>
+);
+export const IconPencil = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" />
+    <path d="m13.5 6.5 4 4" />
+  </Svg>
+);
+export const IconPrinter = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M7 9V3h10v6M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2" />
+    <path d="M7 14h10v7H7z" />
+  </Svg>
+);

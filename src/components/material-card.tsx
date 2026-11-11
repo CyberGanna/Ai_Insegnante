@@ -1,6 +1,6 @@
 "use client";
 
-import { IconCheck, IconFile, IconImage, IconLink, IconTrash } from "@/components/icons";
+import { IconCheck, IconFile, IconImage, IconLink, IconTrash, IconVideo, IconWave } from "@/components/icons";
 import { cn, formatBytes } from "@/components/ui";
 import type { Material } from "@/lib/types";
 
@@ -8,8 +8,17 @@ const KIND_LABEL: Record<Material["kind"], string> = {
   pdf: "PDF",
   docx: "Word",
   image: "Foto",
+  audio: "Audio",
+  video: "Video",
   url: "Link",
   text: "Testo",
+};
+
+const KIND_ICON: Partial<Record<Material["kind"], typeof IconFile>> = {
+  image: IconImage,
+  url: IconLink,
+  audio: IconWave,
+  video: IconVideo,
 };
 
 export function MaterialStatus({ material, onRetry }: { material: Material; onRetry?: () => void }) {
@@ -17,7 +26,7 @@ export function MaterialStatus({ material, onRetry }: { material: Material; onRe
     return (
       <span className="inline-flex items-center gap-1.5 text-[13px] text-ink-soft">
         <span className="animate-status size-1.5 rounded-full bg-amber" aria-hidden="true" />
-        In lettura
+        {material.kind === "audio" || material.kind === "video" ? "In trascrizione" : "In lettura"}
       </span>
     );
   if (material.status === "ready")
@@ -52,7 +61,7 @@ export function MaterialCard({
   onRemove?: () => void;
   onRetry?: () => void;
 }) {
-  const Icon = material.kind === "image" ? IconImage : material.kind === "url" ? IconLink : IconFile;
+  const Icon = KIND_ICON[material.kind] ?? IconFile;
   const selectable = onToggle && material.status === "ready";
   const meta = [KIND_LABEL[material.kind], formatBytes(material.sizeBytes)].filter(Boolean).join(", ");
 

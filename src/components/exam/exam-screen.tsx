@@ -9,8 +9,9 @@ import { IconArrowLeft, IconKeyboard, IconMic, IconRepeat, IconStop } from "@/co
 import { Button, ButtonLink, cn } from "@/components/ui";
 import { getAi } from "@/lib/ai";
 import type { ExamContext, Listening } from "@/lib/ai/types";
+import { saveEvaluation } from "@/lib/exam";
 import { keys } from "@/lib/hooks";
-import { MODE_LABEL, type Material, type Session, type Turn } from "@/lib/types";
+import { modeLabel, type Material, type Session, type Turn } from "@/lib/types";
 import { SoundOrb, type OrbState } from "./sound-orb";
 
 type Phase =
@@ -153,27 +154,7 @@ export function ExamScreen() {
     setError(null);
     try {
       const evaluation = await ai.examiner.evaluate(ctx(s));
-      await Promise.all(
-        evaluation.turns.map((te) => {
-          const turn = turnsRef.current.find((t) => t.index === te.index);
-          return turn ? store.updateTurn(turn.id, { feedback: te.feedback, modelAnswer: te.modelAnswer }) : null;
-        }),
-      );
-      await store.saveReport({
-        sessionId: s.id,
-        score: evaluation.score,
-        scoreMax: s.scoreMax,
-        summary: evaluation.summary,
-        strengths: evaluation.strengths.slice(0, 3),
-        improvements: evaluation.improvements.slice(0, 3),
-        weakTopics: evaluation.weakTopics,
-        createdAt: new Date().toISOString(),
-      });
-      await store.updateSession(s.id, {
-        status: "completata",
-        score: evaluation.score,
-        endedAt: new Date().toISOString(),
-      });
+      await saveEvaluation(store, s, turnsRef.current, evaluation);
       sessionStorage.removeItem(`esame:${s.id}:tempo`);
       await mutate(keys.sessions);
       router.replace(`/report/?id=${s.id}`);
@@ -198,6 +179,8 @@ export function ExamScreen() {
         question: next.question,
         topic: next.topic,
         isFollowUp: next.isFollowUp,
+        kind: "aperta",
+        options: null,
         answer: null,
         modelAnswer: null,
         feedback: null,
@@ -318,7 +301,7 @@ export function ExamScreen() {
             Termina
           </button>
         )}
-        <p className="hidden truncate text-sm text-ink-faint sm:block">{session ? MODE_LABEL[session.mode] : ""}</p>
+        <p className="hidden truncate text-sm text-ink-faint sm:block">{session ? modeLabel(session) : ""}</p>
         <div
           role="timer"
           aria-label={`Tempo rimasto ${fmtTime(remaining)}`}

@@ -1,4 +1,4 @@
-import type { Material, Session, Turn, Voice } from "@/lib/types";
+import type { Material, QuestionKind, Session, Turn, Voice } from "@/lib/types";
 
 /**
  * L’unica porta verso AI e voce. Tre parti sostituibili:
@@ -22,6 +22,13 @@ export interface NextQuestion {
   isFollowUp: boolean;
 }
 
+export interface WrittenQuestion {
+  question: string;
+  topic: string;
+  kind: QuestionKind;
+  options: string[] | null;
+}
+
 export interface TurnEvaluation {
   index: number;
   feedback: string;
@@ -39,6 +46,8 @@ export interface Evaluation {
 
 export interface Examiner {
   nextQuestion(ctx: ExamContext): Promise<NextQuestion>;
+  /** Prova scritta: prepara tutte le domande in una volta. */
+  writtenTest(ctx: ExamContext): Promise<WrittenQuestion[]>;
   evaluate(ctx: ExamContext): Promise<Evaluation>;
 }
 

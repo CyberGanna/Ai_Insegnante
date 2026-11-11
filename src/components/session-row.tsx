@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { MODE_LABEL, type Session } from "@/lib/types";
+import { examHref, modeLabel, type Session } from "@/lib/types";
 import { cn, formatDate, formatScore } from "./ui";
 
 export function SessionRow({ session, compact }: { session: Session; compact?: boolean }) {
-  const href = session.status === "completata" ? `/report/?id=${session.id}` : `/esame/?id=${session.id}`;
+  const href = session.status === "completata" ? `/report/?id=${session.id}` : examHref(session);
   const label = session.status === "completata" ? null : session.status === "in_corso" ? "Da finire" : "Interrotta";
   return (
     <li>
@@ -17,7 +17,7 @@ export function SessionRow({ session, compact }: { session: Session; compact?: b
         <div className="min-w-0 flex-1">
           <p className="truncate text-[15px] font-medium text-ink">{session.title}</p>
           <p className="mt-0.5 truncate text-[13px] text-ink-faint">
-            {MODE_LABEL[session.mode]}, {formatDate(session.startedAt)}
+            {modeLabel(session)}, {formatDate(session.startedAt)}
           </p>
         </div>
         {label ? (

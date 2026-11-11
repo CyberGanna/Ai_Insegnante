@@ -6,11 +6,22 @@ import type { Material } from "@/lib/types";
 import { keys } from "./hooks";
 
 export const MAX_FILE_MB = 20;
-export const ACCEPT = ".pdf,.docx,.txt,.md,image/*";
+/** Audio e video passano dal servizio di trascrizione, che accetta fino a 25 MB. */
+export const MAX_MEDIA_MB = 25;
+export const ACCEPT = ".pdf,.docx,.txt,.md,image/*,audio/*,video/mp4,video/webm,video/quicktime,.m4a,.mp3,.mov";
 
 export function validateFile(file: File): string | null {
-  if (!kindForFile(file)) return `${file.name}: formato non supportato. Usa PDF, DOCX, testo o una foto.`;
-  if (file.size > MAX_FILE_MB * 1024 * 1024) return `${file.name}: supera i ${MAX_FILE_MB} MB.`;
+  const kind = kindForFile(file);
+  if (!kind) return `${file.name}: formato non supportato. Usa PDF, Word, testo, foto, audio o video.`;
+  const name = file.name.toLowerCase();
+  if (kind === "video" && (file.type === "video/quicktime" || name.endsWith(".mov")))
+    return `${file.name}: i video .mov dell’iPhone non si possono trascrivere. Esportalo in MP4 oppure carica solo l’audio (per esempio un memo vocale).`;
+  const isMedia = kind === "audio" || kind === "video";
+  const max = isMedia ? MAX_MEDIA_MB : MAX_FILE_MB;
+  if (file.size > max * 1024 * 1024)
+    return isMedia
+      ? `${file.name}: supera i ${max} MB. Per una lezione lunga carica solo l’audio, oppure dividila in parti.`
+      : `${file.name}: supera i ${max} MB.`;
   return null;
 }
 
