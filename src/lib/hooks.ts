@@ -8,6 +8,7 @@ export const keys = {
   profile: "profile",
   materials: "materials",
   sessions: "sessions",
+  projects: "projects",
   session: (id: string) => `session:${id}`,
   turns: (id: string) => `turns:${id}`,
   report: (id: string) => `report:${id}`,
@@ -26,4 +27,9 @@ export function useMaterials() {
 export function useSessions() {
   const store = useStore();
   return useSWR(keys.sessions, () => store.listSessions());
+}
+
+export function useProjects() {
+  const store = useStore();
+  return useSWR(keys.projects, () => store.listProjects());
 }

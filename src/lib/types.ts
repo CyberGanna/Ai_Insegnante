@@ -27,8 +27,18 @@ export type ExamFormat = "orale" | "scritto";
 /** aperta = risposta libera, multipla = a crocette, traccia = tema o elaborato lungo. */
 export type QuestionKind = "aperta" | "multipla" | "traccia";
 
+/** Una cartella per materia (verifiche, maturità) o per azienda (colloqui). */
+export interface Project {
+  id: string;
+  mode: ExamMode;
+  name: string;
+  createdAt: string;
+}
+
 export interface SessionConfig {
   mode: ExamMode;
+  /** Progetto a cui appartiene la prova, se scelto. */
+  projectId: string | null;
   format: ExamFormat;
   durationMin: Duration;
   difficulty: Difficulty;
@@ -105,5 +115,26 @@ export const modeLabel = (s: Pick<SessionConfig, "mode" | "format">) =>
 /** Pagina dove si svolge la prova. */
 export const examHref = (s: Pick<Session, "id" | "format">) =>
   `${s.format === "scritto" ? "/scritto/" : "/esame/"}?id=${s.id}`;
+
+export const PROJECT_COPY: Record<ExamMode, { section: string; one: string; placeholder: string; hint: string }> = {
+  interrogazione: {
+    section: "Verifiche",
+    one: "materia",
+    placeholder: "Es. Storia, Fisica, Inglese",
+    hint: "Una cartella per materia: dentro ritrovi tutte le verifiche e interrogazioni fatte.",
+  },
+  maturita: {
+    section: "Esami di maturità",
+    one: "materia o percorso",
+    placeholder: "Es. Italiano, Percorso sul Novecento",
+    hint: "Raggruppa le simulazioni per materia o per il percorso che porterai all’orale.",
+  },
+  colloquio: {
+    section: "Colloqui",
+    one: "azienda",
+    placeholder: "Es. Ferrero, Studio Rossi",
+    hint: "Una cartella per azienda: ritrovi i colloqui provati per ogni candidatura.",
+  },
+};
 
 export const scoreMaxFor = (mode: ExamMode): 10 | 100 => (mode === "maturita" ? 100 : 10);

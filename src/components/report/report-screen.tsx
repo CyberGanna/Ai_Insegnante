@@ -68,6 +68,7 @@ export function ReportScreen() {
       const next = await store.createSession(
         {
           mode: session!.mode,
+          projectId: session!.projectId,
           format: session!.format,
           durationMin: session!.durationMin,
           difficulty: session!.difficulty,

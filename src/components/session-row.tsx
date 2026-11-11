@@ -5,9 +5,11 @@ import { cn, formatDate, formatScore } from "./ui";
 export function SessionRow({
   session,
   compact,
+  projectName,
 }: {
   session: Session;
   compact?: boolean;
+  projectName?: string;
 }) {
   const href =
     session.status === "completata"
@@ -33,6 +35,7 @@ export function SessionRow({
             {session.title}
           </p>
           <p className="mt-0.5 truncate text-[13px] text-ink-faint">
+            {projectName ? `${projectName}, ` : ""}
             {modeLabel(session)}, {formatDate(session.startedAt)}
           </p>
         </div>

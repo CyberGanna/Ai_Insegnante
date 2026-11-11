@@ -1,4 +1,4 @@
-import type { Material, MaterialRole, Profile, Report, Session, SessionConfig, Turn } from "@/lib/types";
+import type { ExamMode, Material, MaterialRole, Profile, Project, Report, Session, SessionConfig, Turn } from "@/lib/types";
 
 export interface NewMaterialFile {
   kind: "file";
@@ -29,6 +29,12 @@ export interface DataStore {
   deleteMaterial(id: string): Promise<void>;
   /** Scarica il file originale (serve per leggerlo in modalità prova). */
   getMaterialFile(material: Material): Promise<Blob | null>;
+
+  listProjects(mode?: ExamMode): Promise<Project[]>;
+  createProject(mode: ExamMode, name: string): Promise<Project>;
+  renameProject(id: string, name: string): Promise<void>;
+  /** Le prove del progetto restano, senza progetto. */
+  deleteProject(id: string): Promise<void>;
 
   listSessions(limit?: number): Promise<Session[]>;
   getSession(id: string): Promise<Session | null>;

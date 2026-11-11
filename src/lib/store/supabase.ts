@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Material, Profile, Report, Session, Turn } from "@/lib/types";
+import type { Material, Profile, Project, Report, Session, Turn } from "@/lib/types";
 import { scoreMaxFor } from "@/lib/types";
 import { kindForFile } from "./local";
 import type { DataStore } from "./types";
@@ -25,6 +25,7 @@ const toSession = (r: Row): Session => ({
   id: r.id as string,
   title: r.title as string,
   mode: r.mode as Session["mode"],
+  projectId: (r.project_id as string) ?? null,
   format: (r.format as Session["format"]) ?? "orale",
   durationMin: r.duration_min as Session["durationMin"],
   difficulty: r.difficulty as Session["difficulty"],
@@ -37,6 +38,13 @@ const toSession = (r: Row): Session => ({
   scoreMax: (r.score_max as 10 | 100) ?? 10,
   startedAt: r.started_at as string,
   endedAt: (r.ended_at as string) ?? null,
+});
+
+const toProject = (r: Row): Project => ({
+  id: r.id as string,
+  mode: r.mode as Project["mode"],
+  name: r.name as string,
+  createdAt: r.created_at as string,
 });
 
 const toTurn = (r: Row): Turn => ({
@@ -168,6 +176,24 @@ export function createSupabaseStore(supabase: SupabaseClient, userId: string): D
       return res.data ?? null;
     },
 
+    async listProjects(mode) {
+      let q = supabase.from("projects").select("*").order("name");
+      if (mode) q = q.eq("mode", mode);
+      return (check(await q) as Row[]).map(toProject);
+    },
+    async createProject(mode, name) {
+      const row = check(
+        await supabase.from("projects").insert({ user_id: userId, mode, name: name.trim() }).select().single(),
+      ) as Row;
+      return toProject(row);
+    },
+    async renameProject(id, name) {
+      check(await supabase.from("projects").update({ name: name.trim() }).eq("id", id));
+    },
+    async deleteProject(id) {
+      check(await supabase.from("projects").delete().eq("id", id));
+    },
+
     async listSessions(limit) {
       let q = supabase.from("sessions").select(SESSION_SELECT).order("started_at", { ascending: false });
       if (limit) q = q.limit(limit);
@@ -187,6 +213,7 @@ export function createSupabaseStore(supabase: SupabaseClient, userId: string): D
             user_id: userId,
             title,
             mode: config.mode,
+            project_id: config.projectId,
             format: config.format,
             duration_min: config.durationMin,
             difficulty: config.difficulty,

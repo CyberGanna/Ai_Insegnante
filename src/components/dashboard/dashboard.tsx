@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { mutate } from "swr";
 import { useStore } from "@/components/providers";
@@ -10,7 +10,13 @@ import { ProgressChart } from "@/components/progress-chart";
 import { SessionRow } from "@/components/session-row";
 import { Button, Card, SectionTitle } from "@/components/ui";
 import { getAi } from "@/lib/ai";
-import { keys, useMaterials, useProfile, useSessions } from "@/lib/hooks";
+import {
+  keys,
+  useMaterials,
+  useProfile,
+  useProjects,
+  useSessions,
+} from "@/lib/hooks";
 import { readMaterial } from "@/lib/materials";
 import {
   examHref,
@@ -23,6 +29,7 @@ import {
 } from "@/lib/types";
 import { DropZone } from "./drop-zone";
 import { ModelTests } from "./model-tests";
+import { ProjectPicker } from "./project-picker";
 import { ExamSettings, ModePicker } from "./setup";
 
 function sessionTitle(
@@ -65,6 +72,21 @@ export function Dashboard() {
 
   const [mode, setMode] = useState<ExamMode>("interrogazione");
   const [format, setFormat] = useState<ExamFormat>("orale");
+  const { data: projects = [] } = useProjects();
+  const [projectId, setProjectId] = useState<string | null>(null);
+
+  // Arrivando da "Nuova prova in …" il progetto e il suo tipo di prova sono già scelti.
+  const fromProject = useSearchParams().get("progetto");
+  // Regolazione durante il render (non in un effetto): si applica una sola volta per progetto.
+  const [appliedProject, setAppliedProject] = useState<string | null>(null);
+  const target = fromProject
+    ? projects.find((x) => x.id === fromProject)
+    : undefined;
+  if (target && appliedProject !== target.id) {
+    setAppliedProject(target.id);
+    setMode(target.mode);
+    setProjectId(target.id);
+  }
   const [jobPosting, setJobPosting] = useState("");
   const [duration, setDuration] = useState<Duration>(20);
   const [difficulty, setDifficulty] = useState<Difficulty>("medio");
@@ -147,6 +169,9 @@ export function Dashboard() {
       const session = await store.createSession(
         {
           mode,
+          projectId: projects.some((p) => p.id === projectId && p.mode === mode)
+            ? projectId
+            : null,
           format,
           durationMin: duration,
           difficulty,
@@ -273,6 +298,16 @@ export function Dashboard() {
             jobPosting={jobPosting}
             onJobPosting={setJobPosting}
             jobError={error?.field === "job" ? error.text : null}
+          />
+          <ProjectPicker
+            mode={mode}
+            projects={projects}
+            value={
+              projects.some((p) => p.id === projectId && p.mode === mode)
+                ? projectId
+                : null
+            }
+            onChange={setProjectId}
           />
         </section>
 

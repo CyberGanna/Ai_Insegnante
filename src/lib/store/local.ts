@@ -1,4 +1,4 @@
-import type { Material, MaterialKind, Profile, Report, Session, Turn } from "@/lib/types";
+import type { ExamMode, Material, MaterialKind, Profile, Project, Report, Session, Turn } from "@/lib/types";
 import { scoreMaxFor } from "@/lib/types";
 import type { DataStore, NewMaterial } from "./types";
 
@@ -12,6 +12,7 @@ const KEY = "ai-insegnante:v1";
 interface LocalDb {
   profile: Profile;
   materials: Material[];
+  projects: Project[];
   sessions: Session[];
   turns: Turn[];
   reports: Report[];
@@ -32,6 +33,7 @@ function emptyDb(): LocalDb {
       defaultDuration: 20,
     },
     materials: [],
+    projects: [],
     sessions: [],
     turns: [],
     reports: [],
@@ -96,7 +98,7 @@ async function deleteFile(id: string) {
 }
 
 // Sessioni e turni salvati prima della prova scritta non hanno i campi nuovi.
-const withSessionDefaults = (s: Session): Session => ({ ...s, format: s.format ?? "orale" });
+const withSessionDefaults = (s: Session): Session => ({ ...s, format: s.format ?? "orale", projectId: s.projectId ?? null });
 const withTurnDefaults = (t: Turn): Turn => ({ ...t, kind: t.kind ?? "aperta", options: t.options ?? null });
 
 export function kindForFile(file: File): MaterialKind | null {
@@ -184,6 +186,30 @@ export function createLocalStore(): DataStore {
     },
     async getMaterialFile(material) {
       return getFile(material.id);
+    },
+
+    async listProjects(mode?: ExamMode) {
+      return read()
+        .projects.filter((p) => !mode || p.mode === mode)
+        .sort((a, b) => a.name.localeCompare(b.name, "it"));
+    },
+    async createProject(mode, name) {
+      const project: Project = { id: uid(), mode, name: name.trim(), createdAt: new Date().toISOString() };
+      write((db) => {
+        db.projects.push(project);
+      });
+      return project;
+    },
+    async renameProject(id, name) {
+      write((db) => {
+        db.projects = db.projects.map((p) => (p.id === id ? { ...p, name: name.trim() } : p));
+      });
+    },
+    async deleteProject(id) {
+      write((db) => {
+        db.projects = db.projects.filter((p) => p.id !== id);
+        db.sessions = db.sessions.map((s) => (s.projectId === id ? { ...s, projectId: null } : s));
+      });
     },
 
     async listSessions(limit) {
