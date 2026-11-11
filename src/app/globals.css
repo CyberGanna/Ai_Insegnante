@@ -1,0 +1,115 @@
+@import "tailwindcss";
+
+/*
+  Ai Insegnante: una biblioteca silenziosa.
+  Carta calda, inchiostro scuro, un verde acqua profondo per le azioni
+  e l'ambra solo per voti e per il momento in cui tocca a te parlare.
+*/
+@theme {
+  --color-paper: #f7f5f0;
+  --color-paper-deep: #efebe3;
+  --color-ink: #1f2430;
+  --color-ink-soft: #545a68;
+  --color-ink-faint: #6b7080;
+  --color-line: #e4dfd4;
+  --color-card: #ffffff;
+  --color-teal: #0f766e;
+  --color-teal-deep: #0b5c56;
+  --color-teal-soft: #e2efed;
+  --color-amber: #d97706;
+  --color-amber-deep: #a85b05;
+  --color-amber-soft: #fbefdc;
+  --color-danger: #b42318;
+
+  --font-serif: var(--font-fraunces), Georgia, serif;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+
+  --radius-card: 12px;
+  --shadow-card: 0 1px 2px rgb(31 36 48 / 0.04), 0 8px 24px -12px rgb(31 36 48 / 0.12);
+  --shadow-lift: 0 2px 4px rgb(31 36 48 / 0.05), 0 16px 32px -16px rgb(31 36 48 / 0.18);
+}
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  /* Il pulsante fisso e la barra in basso sul telefono non devono coprire l’elemento a fuoco. */
+  scroll-padding-bottom: 10rem;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "cv11", "ss01";
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-serif);
+  font-optical-sizing: auto;
+  text-wrap: balance;
+  letter-spacing: -0.01em;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-teal);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Il cerchio d'esame: respira mentre l'AI parla, ascolta in ambra. */
+@keyframes orb-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scale(1.12);
+    opacity: 0.15;
+  }
+}
+
+@keyframes orb-think {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes status-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.animate-status {
+  animation: status-pulse 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
