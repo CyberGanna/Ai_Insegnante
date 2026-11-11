@@ -50,18 +50,24 @@ export function SideModes({
           const listId = `sezioni-${mode}`;
           return (
             <li key={mode}>
-              <div className="flex items-center">
+              {/* La pillola copre tutta la riga, freccia compresa, come le voci sopra. */}
+              <div
+                className={cn(
+                  "flex h-10 items-center rounded-xl pr-1 transition-colors",
+                  current && !progetto
+                    ? "bg-gradient-to-b from-[#33c2b1] to-[#12877e] text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.45),0_8px_20px_-8px_rgb(45_212_191/0.7)]"
+                    : current
+                      ? "text-white"
+                      : "text-white/75 hover:bg-white/10 hover:text-white",
+                )}
+              >
                 <Link
                   href={sectionHref(mode)}
                   onClick={() => setToggled((t) => ({ ...t, [mode]: true }))}
                   aria-current={current && !progetto ? "page" : undefined}
                   className={cn(
-                    "flex h-10 min-w-0 flex-1 items-center gap-3 rounded-xl px-3 text-[15px] transition-colors",
-                    current && !progetto
-                      ? "bg-gradient-to-b from-[#33c2b1] to-[#12877e] font-medium text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.45),0_8px_20px_-8px_rgb(45_212_191/0.7)]"
-                      : current
-                        ? "font-medium text-white"
-                        : "text-white/75 hover:bg-white/10 hover:text-white",
+                    "flex h-10 min-w-0 flex-1 items-center gap-3 rounded-xl px-3 text-[15px]",
+                    current && "font-medium",
                   )}
                 >
                   <Icon />
@@ -73,7 +79,7 @@ export function SideModes({
                   aria-expanded={open}
                   aria-controls={listId}
                   aria-label={open ? `Chiudi ${label}` : `Apri ${label}`}
-                  className="grid size-8 shrink-0 place-items-center rounded-lg text-white/60 hover:bg-white/10 hover:text-white"
+                  className="grid size-8 shrink-0 place-items-center rounded-lg text-current opacity-70 hover:bg-white/15 hover:opacity-100"
                 >
                   <svg
                     width="14"
