@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { playSound } from "@/lib/sound";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { mutate } from "swr";
@@ -193,7 +194,7 @@ export function ExamScreen() {
       await saveEvaluation(store, s, turnsRef.current, evaluation);
       sessionStorage.removeItem(`esame:${s.id}:tempo`);
       await mutate(keys.sessions);
-      router.replace(`/report/?id=${s.id}`);
+      router.replace(`/report/?id=${s.id}&fine=1`);
     } catch (e) {
       setPhase("error");
       setError({
@@ -296,6 +297,7 @@ export function ExamScreen() {
 
   function begin() {
     if (!session) return;
+    playSound("start");
     if (!ai.stt.supported) setTyping(true);
     if (current) void speak(session, current.question);
     else void ask(session);

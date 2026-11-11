@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { playSound } from "@/lib/sound";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { mutate } from "swr";
@@ -101,6 +102,7 @@ export function WrittenScreen() {
         );
       }
       setTurns(created);
+      playSound("start");
       setPhase("ready");
     } catch (e) {
       setPhase("error");
@@ -236,7 +238,7 @@ export function WrittenScreen() {
       await saveEvaluation(store, session, final, evaluation);
       sessionStorage.removeItem(`esame:${session.id}:tempo`);
       await mutate(keys.sessions);
-      router.replace(`/report/?id=${session.id}`);
+      router.replace(`/report/?id=${session.id}&fine=1`);
     } catch (e) {
       setPhase("error");
       setError({
