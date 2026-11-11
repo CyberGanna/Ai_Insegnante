@@ -17,21 +17,29 @@ export function SettingsPage() {
   return (
     <PageFrame>
       <PageHeader title="Impostazioni" />
-      {profile ? <ProfileForm profile={profile} /> : <p className="mt-8 text-ink-soft">Caricamento…</p>}
+      {profile ? (
+        <ProfileForm profile={profile} />
+      ) : (
+        <p className="mt-8 text-ink-soft">Caricamento…</p>
+      )}
 
       <Card className="mt-10 p-5 sm:p-6">
         <h2 className="text-xl font-medium">Account</h2>
         {isSupabaseConfigured && auth.status === "ready" ? (
           <div className="mt-3 flex flex-wrap items-center justify-between gap-4">
             <p className="text-ink-soft">Accesso con {auth.email}</p>
-            <Button variant="secondary" onClick={() => void getSupabase().auth.signOut()}>
+            <Button
+              variant="secondary"
+              onClick={() => void getSupabase().auth.signOut()}
+            >
               Esci dall’account
             </Button>
           </div>
         ) : (
           <p className="mt-3 leading-relaxed text-ink-soft">
-            Stai usando la modalità prova: materiali e sessioni restano in questo browser. Quando il progetto sarà
-            collegato a Supabase potrai accedere con la tua email e ritrovarli su ogni dispositivo.
+            Stai usando la modalità prova: materiali e sessioni restano in
+            questo browser. Quando il progetto sarà collegato a Supabase potrai
+            accedere con la tua email e ritrovarli su ogni dispositivo.
           </p>
         )}
       </Card>
@@ -43,7 +51,9 @@ function ProfileForm({ profile }: { profile: Profile }) {
   const store = useStore();
   const [name, setName] = useState(profile.name);
   const [duration, setDuration] = useState<Duration>(profile.defaultDuration);
-  const [difficulty, setDifficulty] = useState<Difficulty>(profile.defaultDifficulty);
+  const [difficulty, setDifficulty] = useState<Difficulty>(
+    profile.defaultDifficulty,
+  );
   const [voice, setVoice] = useState<Voice>(profile.defaultVoice);
   const [saved, setSaved] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -62,7 +72,9 @@ function ProfileForm({ profile }: { profile: Profile }) {
       await mutate(keys.profile);
       setSaved("Impostazioni salvate.");
     } catch (err) {
-      setSaved(err instanceof Error ? err.message : "Salvataggio non riuscito.");
+      setSaved(
+        err instanceof Error ? err.message : "Salvataggio non riuscito.",
+      );
     } finally {
       setSaving(false);
     }
@@ -74,7 +86,9 @@ function ProfileForm({ profile }: { profile: Profile }) {
         <label htmlFor={nameId} className="text-[15px] font-medium">
           Come ti chiami?
         </label>
-        <p className="mt-0.5 text-sm text-ink-soft">Lo usiamo per salutarti e l’esaminatore per chiamarti.</p>
+        <p className="mt-0.5 text-sm text-ink-soft">
+          Lo usiamo per salutarti e l’esaminatore per chiamarti.
+        </p>
         <input
           id={nameId}
           name="given-name"
@@ -89,8 +103,12 @@ function ProfileForm({ profile }: { profile: Profile }) {
       </Card>
 
       <Card className="p-5 sm:p-6">
-        <h2 className="text-xl font-medium">Valori predefiniti della simulazione</h2>
-        <p className="mt-1 mb-5 text-sm text-ink-soft">Li ritrovi già scelti ogni volta che prepari una prova.</p>
+        <h2 className="text-xl font-medium">
+          Valori predefiniti della simulazione
+        </h2>
+        <p className="mt-1 mb-5 text-sm text-ink-soft">
+          Li ritrovi già scelti ogni volta che prepari una prova.
+        </p>
         <ExamSettings
           duration={duration}
           difficulty={difficulty}

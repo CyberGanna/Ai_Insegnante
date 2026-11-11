@@ -4,13 +4,31 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useAuth } from "./providers";
-import { IconBooks, IconHome, IconProgress, IconSessions, IconSettings } from "./icons";
+import {
+  IconBooks,
+  IconHome,
+  IconProgress,
+  IconSessions,
+  IconSettings,
+} from "./icons";
 import { cn } from "./ui";
 
 export function Logo({ className }: { className?: string }) {
   return (
-    <Link href="/" className={cn("group inline-flex items-center gap-2.5 rounded-md", className)}>
-      <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true" className="shrink-0">
+    <Link
+      href="/"
+      className={cn(
+        "group inline-flex items-center gap-2.5 rounded-md",
+        className,
+      )}
+    >
+      <svg
+        width="30"
+        height="30"
+        viewBox="0 0 32 32"
+        aria-hidden="true"
+        className="shrink-0"
+      >
         <circle cx="16" cy="16" r="15" fill="var(--color-teal)" />
         <path
           d="M9 16h1.6M12.4 12.5v7M15.8 9.5v13M19.2 12v8M22.6 14.5v3"
@@ -34,7 +52,9 @@ const NAV = [
 ];
 
 const isActive = (pathname: string, href: string) =>
-  href === "/" ? pathname === "/" : pathname.startsWith(href.replace(/\/$/, ""));
+  href === "/"
+    ? pathname === "/"
+    : pathname.startsWith(href.replace(/\/$/, ""));
 
 function useRequireAuth() {
   const auth = useAuth();
@@ -102,7 +122,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </ul>
         </nav>
         <p className="mt-auto px-3 text-xs leading-relaxed text-ink-faint">
-          {auth.store.kind === "local" ? "Modalità prova: i dati restano in questo browser." : auth.email}
+          {auth.store.kind === "local"
+            ? "Modalità prova: i dati restano in questo browser."
+            : auth.email}
         </p>
       </aside>
 
@@ -111,7 +133,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Logo />
       </header>
 
-      <main id="contenuto" className="min-w-0 pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0">
+      <main
+        id="contenuto"
+        className="min-w-0 pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0"
+      >
         {children}
       </main>
 
@@ -121,25 +146,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-paper/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
       >
         <ul className="grid grid-cols-5">
-          {[{ href: "/", label: "Oggi", icon: IconHome }, ...NAV].map(({ href, label, icon: Icon }) => {
-            const active = isActive(pathname, href);
-            const short = label === "Le mie sessioni" ? "Sessioni" : label;
-            return (
-              <li key={href}>
-                <Link
-                  href={href}
-                  aria-current={active ? "page" : undefined}
-                  className={cn(
-                    "flex h-16 flex-col items-center justify-center gap-1 text-[11px] leading-none",
-                    active ? "font-medium text-teal" : "text-ink-soft",
-                  )}
-                >
-                  <Icon size={22} />
-                  {short}
-                </Link>
-              </li>
-            );
-          })}
+          {[{ href: "/", label: "Oggi", icon: IconHome }, ...NAV].map(
+            ({ href, label, icon: Icon }) => {
+              const active = isActive(pathname, href);
+              const short = label === "Le mie sessioni" ? "Sessioni" : label;
+              return (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    aria-current={active ? "page" : undefined}
+                    className={cn(
+                      "flex h-16 flex-col items-center justify-center gap-1 text-[11px] leading-none",
+                      active ? "font-medium text-teal" : "text-ink-soft",
+                    )}
+                  >
+                    <Icon size={22} />
+                    {short}
+                  </Link>
+                </li>
+              );
+            },
+          )}
         </ul>
       </nav>
     </div>

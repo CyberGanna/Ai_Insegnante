@@ -5,7 +5,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { mutate } from "swr";
 import { useStore } from "@/components/providers";
-import { IconArrowLeft, IconKeyboard, IconMic, IconRepeat, IconStop } from "@/components/icons";
+import {
+  IconArrowLeft,
+  IconKeyboard,
+  IconMic,
+  IconRepeat,
+  IconStop,
+} from "@/components/icons";
 import { Button, ButtonLink, cn } from "@/components/ui";
 import { getAi } from "@/lib/ai";
 import type { ExamContext, Listening } from "@/lib/ai/types";
@@ -50,8 +56,16 @@ export function ExamScreen() {
   const [current, setCurrent] = useState<Turn | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
-  const [error, setError] = useState<{ text: string; retry: () => void } | null>(
-    id ? null : { text: "Manca il riferimento alla simulazione.", retry: () => router.replace("/") },
+  const [error, setError] = useState<{
+    text: string;
+    retry: () => void;
+  } | null>(
+    id
+      ? null
+      : {
+          text: "Manca il riferimento alla simulazione.",
+          retry: () => router.replace("/"),
+        },
   );
   const [questionNumber, setQuestionNumber] = useState(0);
   const [typing, setTyping] = useState(false);
@@ -71,12 +85,19 @@ export function ExamScreen() {
 
   const ctx = (s: Session): ExamContext => ({
     session: s,
-    materials: materialsRef.current.map(({ id: mid, name, text }) => ({ id: mid, name, text })),
+    materials: materialsRef.current.map(({ id: mid, name, text, role }) => ({
+      id: mid,
+      name,
+      text,
+      role,
+    })),
     turns: turnsRef.current,
     elapsedSec: elapsedRef.current,
   });
 
-  const countQuestions = (upTo: Turn) => turnsRef.current.filter((t) => t.index <= upTo.index && !t.isFollowUp).length;
+  const countQuestions = (upTo: Turn) =>
+    turnsRef.current.filter((t) => t.index <= upTo.index && !t.isFollowUp)
+      .length;
 
   // Caricamento della sessione.
   useEffect(() => {
@@ -87,17 +108,25 @@ export function ExamScreen() {
       if (cancelled) return;
       if (!s) {
         setPhase("error");
-        setError({ text: "Non trovo questa simulazione.", retry: () => router.replace("/") });
+        setError({
+          text: "Non trovo questa simulazione.",
+          retry: () => router.replace("/"),
+        });
         return;
       }
       if (s.status === "completata") {
         router.replace(`/report/?id=${s.id}`);
         return;
       }
-      const [turns, materials] = await Promise.all([store.listTurns(s.id), store.listMaterials()]);
+      const [turns, materials] = await Promise.all([
+        store.listTurns(s.id),
+        store.listMaterials(),
+      ]);
       if (cancelled) return;
       turnsRef.current = turns;
-      materialsRef.current = materials.filter((m) => s.materialIds.includes(m.id));
+      materialsRef.current = materials.filter((m) =>
+        s.materialIds.includes(m.id),
+      );
       const saved = Number(sessionStorage.getItem(`esame:${s.id}:tempo`) ?? 0);
       elapsedRef.current = saved;
       setElapsed(saved);
@@ -110,7 +139,10 @@ export function ExamScreen() {
       setPhase("intro");
     })().catch((e) => {
       setPhase("error");
-      setError({ text: e instanceof Error ? e.message : "Errore di caricamento.", retry: () => location.reload() });
+      setError({
+        text: e instanceof Error ? e.message : "Errore di caricamento.",
+        retry: () => location.reload(),
+      });
     });
     return () => {
       cancelled = true;
@@ -124,7 +156,11 @@ export function ExamScreen() {
     const t = setInterval(() => {
       elapsedRef.current += 1;
       setElapsed(elapsedRef.current);
-      if (elapsedRef.current % 5 === 0) sessionStorage.setItem(`esame:${session.id}:tempo`, String(elapsedRef.current));
+      if (elapsedRef.current % 5 === 0)
+        sessionStorage.setItem(
+          `esame:${session.id}:tempo`,
+          String(elapsedRef.current),
+        );
     }, 1000);
     return () => clearInterval(t);
   }, [running, session]);
@@ -161,7 +197,8 @@ export function ExamScreen() {
     } catch (e) {
       setPhase("error");
       setError({
-        text: e instanceof Error ? e.message : "Non riesco a preparare il report.",
+        text:
+          e instanceof Error ? e.message : "Non riesco a preparare il report.",
         retry: () => void finish(s),
       });
     }
@@ -192,7 +229,10 @@ export function ExamScreen() {
       await speak(s, turn.question);
     } catch (e) {
       setPhase("error");
-      setError({ text: e instanceof Error ? e.message : "L’esaminatore non risponde.", retry: () => void ask(s) });
+      setError({
+        text: e instanceof Error ? e.message : "L’esaminatore non risponde.",
+        retry: () => void ask(s),
+      });
     }
   }
 
@@ -200,13 +240,17 @@ export function ExamScreen() {
     if (!session || !current) return;
     const answer = text.trim();
     if (!answer) {
-      setNotice("Non ho sentito niente. Premi Rispondi e riprova, oppure scrivi la risposta.");
+      setNotice(
+        "Non ho sentito niente. Premi Rispondi e riprova, oppure scrivi la risposta.",
+      );
       setPhase("waiting");
       return;
     }
     setNotice(null);
     await store.updateTurn(current.id, { answer });
-    turnsRef.current = turnsRef.current.map((t) => (t.id === current.id ? { ...t, answer } : t));
+    turnsRef.current = turnsRef.current.map((t) =>
+      t.id === current.id ? { ...t, answer } : t,
+    );
     setDraft("");
     if (elapsedRef.current >= session.durationMin * 60) await finish(session);
     else await ask(session);
@@ -221,7 +265,11 @@ export function ExamScreen() {
       setStream(handle.stream);
       setPhase("listening");
     } catch (e) {
-      setNotice(e instanceof Error ? e.message : "Non riesco ad accendere il microfono.");
+      setNotice(
+        e instanceof Error
+          ? e.message
+          : "Non riesco ad accendere il microfono.",
+      );
       setTyping(true);
       setPhase("waiting");
     }
@@ -237,7 +285,11 @@ export function ExamScreen() {
       const text = await handle.stop();
       await submitAnswer(text);
     } catch (e) {
-      setNotice(e instanceof Error ? e.message : "Trascrizione non riuscita. Riprova o scrivi la risposta.");
+      setNotice(
+        e instanceof Error
+          ? e.message
+          : "Trascrizione non riuscita. Riprova o scrivi la risposta.",
+      );
       setPhase("waiting");
     }
   }
@@ -272,7 +324,9 @@ export function ExamScreen() {
       ? "speaking"
       : phase === "listening"
         ? "listening"
-        : phase === "thinking" || phase === "transcribing" || phase === "finishing"
+        : phase === "thinking" ||
+            phase === "transcribing" ||
+            phase === "finishing"
           ? "thinking"
           : "idle";
 
@@ -301,7 +355,9 @@ export function ExamScreen() {
             Termina
           </button>
         )}
-        <p className="hidden truncate text-sm text-ink-faint sm:block">{session ? modeLabel(session) : ""}</p>
+        <p className="hidden truncate text-sm text-ink-faint sm:block">
+          {session ? modeLabel(session) : ""}
+        </p>
         <div
           role="timer"
           aria-label={`Tempo rimasto ${fmtTime(remaining)}`}
@@ -326,18 +382,27 @@ export function ExamScreen() {
         ) : phase === "intro" && session ? (
           <div className="my-auto max-w-md">
             <SoundOrb state="idle" stream={null} />
-            <h1 className="mt-8 text-[1.75rem] leading-tight font-medium sm:text-[2rem]">{session.title}</h1>
+            <h1 className="mt-8 text-[1.75rem] leading-tight font-medium sm:text-[2rem]">
+              {session.title}
+            </h1>
             <p className="mt-3 leading-relaxed text-ink-soft">
               L’esaminatore ti farà la prima domanda a voce. Premi{" "}
-              <strong className="font-medium text-ink">Rispondi</strong> quando vuoi parlare e di nuovo quando hai
-              finito. Hai {session.durationMin} minuti.
+              <strong className="font-medium text-ink">Rispondi</strong> quando
+              vuoi parlare e di nuovo quando hai finito. Hai{" "}
+              {session.durationMin} minuti.
             </p>
-            <Button size="lg" className="mt-8 min-w-48" onClick={begin} autoFocus>
+            <Button
+              size="lg"
+              className="mt-8 min-w-48"
+              onClick={begin}
+              autoFocus
+            >
               {current ? "Riprendi" : "Inizia"}
             </Button>
             {!ai.stt.supported ? (
               <p className="mt-4 text-sm text-ink-faint">
-                Questo browser non trascrive la voce: risponderai per iscritto. Chrome, Edge e Safari lo supportano.
+                Questo browser non trascrive la voce: risponderai per iscritto.
+                Chrome, Edge e Safari lo supportano.
               </p>
             ) : null}
           </div>
@@ -391,10 +456,14 @@ export function ExamScreen() {
             <div className="mt-auto w-full max-w-md pt-8">
               {timeUp && canAnswer ? (
                 <p className="mb-4 text-sm text-amber-deep">
-                  Tempo scaduto: rispondi a quest’ultima domanda e poi vedi il report.
+                  Tempo scaduto: rispondi a quest’ultima domanda e poi vedi il
+                  report.
                 </p>
               ) : null}
-              <p aria-live="assertive" className={cn("text-sm text-danger", notice && "mb-4")}>
+              <p
+                aria-live="assertive"
+                className={cn("text-sm text-danger", notice && "mb-4")}
+              >
                 {notice}
               </p>
 
@@ -439,7 +508,11 @@ export function ExamScreen() {
                 <div className="flex flex-col items-center">
                   <button
                     type="button"
-                    onClick={() => (phase === "listening" ? void stopListening() : void startListening())}
+                    onClick={() =>
+                      phase === "listening"
+                        ? void stopListening()
+                        : void startListening()
+                    }
                     disabled={!(canAnswer || phase === "listening")}
                     aria-pressed={phase === "listening"}
                     className={cn(
@@ -449,13 +522,21 @@ export function ExamScreen() {
                         : "bg-teal shadow-[0_10px_30px_-12px_rgb(15_118_110/0.8)] hover:bg-teal-deep",
                     )}
                   >
-                    {phase === "listening" ? <IconStop size={24} /> : <IconMic size={24} />}
+                    {phase === "listening" ? (
+                      <IconStop size={24} />
+                    ) : (
+                      <IconMic size={24} />
+                    )}
                     {phase === "listening" ? "Ho finito" : "Rispondi"}
                   </button>
                   <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm">
                     <button
                       type="button"
-                      onClick={() => session && current && void speak(session, current.question)}
+                      onClick={() =>
+                        session &&
+                        current &&
+                        void speak(session, current.question)
+                      }
                       disabled={!current || phase !== "waiting"}
                       className="inline-flex items-center gap-1.5 font-medium text-teal hover:underline disabled:opacity-40 disabled:hover:no-underline"
                     >
@@ -472,7 +553,9 @@ export function ExamScreen() {
                       Preferisco scrivere
                     </button>
                   </div>
-                  <p className="mt-3 hidden text-xs text-ink-faint sm:block">Puoi usare anche la barra spaziatrice.</p>
+                  <p className="mt-3 hidden text-xs text-ink-faint sm:block">
+                    Puoi usare anche la barra spaziatrice.
+                  </p>
                 </div>
               )}
             </div>
@@ -489,10 +572,14 @@ export function ExamScreen() {
           Vuoi terminare adesso?
         </h2>
         <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">
-          Riceverai comunque il voto e i consigli sulle domande a cui hai risposto.
+          Riceverai comunque il voto e i consigli sulle domande a cui hai
+          risposto.
         </p>
         <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <Button variant="secondary" onClick={() => dialogRef.current?.close()}>
+          <Button
+            variant="secondary"
+            onClick={() => dialogRef.current?.close()}
+          >
             Continua l’esame
           </Button>
           <Button

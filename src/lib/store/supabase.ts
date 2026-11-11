@@ -12,6 +12,7 @@ const toMaterial = (r: Row): Material => ({
   id: r.id as string,
   name: r.name as string,
   kind: r.kind as Material["kind"],
+  role: (r.role as Material["role"]) ?? "studio",
   status: r.status as Material["status"],
   source: (r.source as string) ?? null,
   sizeBytes: (r.size_bytes as number) ?? null,
@@ -110,6 +111,7 @@ export function createSupabaseStore(supabase: SupabaseClient, userId: string): D
               user_id: userId,
               name: input.url.replace(/^https?:\/\//, "").replace(/\/$/, ""),
               kind: "url",
+              role: input.role ?? "studio",
               status: "reading",
               source: input.url,
             })
@@ -134,6 +136,7 @@ export function createSupabaseStore(supabase: SupabaseClient, userId: string): D
             user_id: userId,
             name: file.name,
             kind: kindForFile(file) ?? "text",
+            role: input.role ?? "studio",
             status: "reading",
             source: path,
             size_bytes: file.size,

@@ -44,13 +44,23 @@ export function WrittenScreen() {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [elapsed, setElapsed] = useState(0);
   const [confirming, setConfirming] = useState(false);
-  const [error, setError] = useState<{ text: string; retry: () => void } | null>(
-    id ? null : { text: "Manca il riferimento alla prova.", retry: () => router.replace("/") },
+  const [error, setError] = useState<{
+    text: string;
+    retry: () => void;
+  } | null>(
+    id
+      ? null
+      : {
+          text: "Manca il riferimento alla prova.",
+          retry: () => router.replace("/"),
+        },
   );
 
   const materialsRef = useRef<Material[]>([]);
   const elapsedRef = useRef(0);
-  const saveTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const saveTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(
+    new Map(),
+  );
 
   const total = (session?.durationMin ?? 20) * 60;
   const remaining = total - elapsed;
@@ -64,11 +74,14 @@ export function WrittenScreen() {
     try {
       const questions = await ai.examiner.writtenTest({
         session: s,
-        materials: materialsRef.current.map(({ id: mid, name, text }) => ({ id: mid, name, text })),
+        materials: materialsRef.current.map(
+          ({ id: mid, name, text, role }) => ({ id: mid, name, text, role }),
+        ),
         turns: [],
         elapsedSec: 0,
       });
-      if (!questions.length) throw new Error("Non sono riuscito a preparare le domande. Riprova.");
+      if (!questions.length)
+        throw new Error("Non sono riuscito a preparare le domande. Riprova.");
       const created: Turn[] = [];
       for (const [index, q] of questions.entries()) {
         created.push(
@@ -92,7 +105,8 @@ export function WrittenScreen() {
     } catch (e) {
       setPhase("error");
       setError({
-        text: e instanceof Error ? e.message : "Non riesco a preparare la prova.",
+        text:
+          e instanceof Error ? e.message : "Non riesco a preparare la prova.",
         retry: () => void generate(s),
       });
     }
@@ -107,30 +121,43 @@ export function WrittenScreen() {
       if (cancelled) return;
       if (!s) {
         setPhase("error");
-        setError({ text: "Non trovo questa prova.", retry: () => router.replace("/") });
+        setError({
+          text: "Non trovo questa prova.",
+          retry: () => router.replace("/"),
+        });
         return;
       }
       if (s.status === "completata") {
         router.replace(`/report/?id=${s.id}`);
         return;
       }
-      const [existing, materials] = await Promise.all([store.listTurns(s.id), store.listMaterials()]);
+      const [existing, materials] = await Promise.all([
+        store.listTurns(s.id),
+        store.listMaterials(),
+      ]);
       if (cancelled) return;
-      materialsRef.current = materials.filter((m) => s.materialIds.includes(m.id));
+      materialsRef.current = materials.filter((m) =>
+        s.materialIds.includes(m.id),
+      );
       const saved = Number(sessionStorage.getItem(`esame:${s.id}:tempo`) ?? 0);
       elapsedRef.current = saved;
       setElapsed(saved);
       setSession(s);
       if (existing.length) {
         setTurns(existing);
-        setAnswers(Object.fromEntries(existing.map((t) => [t.id, t.answer ?? ""])));
+        setAnswers(
+          Object.fromEntries(existing.map((t) => [t.id, t.answer ?? ""])),
+        );
         setPhase("ready");
       } else {
         void generate(s);
       }
     })().catch((e) => {
       setPhase("error");
-      setError({ text: e instanceof Error ? e.message : "Errore di caricamento.", retry: () => location.reload() });
+      setError({
+        text: e instanceof Error ? e.message : "Errore di caricamento.",
+        retry: () => location.reload(),
+      });
     });
     return () => {
       cancelled = true;
@@ -145,7 +172,11 @@ export function WrittenScreen() {
     const t = setInterval(() => {
       elapsedRef.current += 1;
       setElapsed(elapsedRef.current);
-      if (elapsedRef.current % 5 === 0) sessionStorage.setItem(`esame:${session.id}:tempo`, String(elapsedRef.current));
+      if (elapsedRef.current % 5 === 0)
+        sessionStorage.setItem(
+          `esame:${session.id}:tempo`,
+          String(elapsedRef.current),
+        );
     }, 1000);
     return () => clearInterval(t);
   }, [phase, session]);
@@ -187,11 +218,18 @@ export function WrittenScreen() {
     try {
       for (const t of saveTimers.current.values()) clearTimeout(t);
       saveTimers.current.clear();
-      const final = turns.map((t) => ({ ...t, answer: (answers[t.id] ?? "").trim() || null }));
-      await Promise.all(final.map((t) => store.updateTurn(t.id, { answer: t.answer })));
+      const final = turns.map((t) => ({
+        ...t,
+        answer: (answers[t.id] ?? "").trim() || null,
+      }));
+      await Promise.all(
+        final.map((t) => store.updateTurn(t.id, { answer: t.answer })),
+      );
       const evaluation = await ai.examiner.evaluate({
         session,
-        materials: materialsRef.current.map(({ id: mid, name, text }) => ({ id: mid, name, text })),
+        materials: materialsRef.current.map(
+          ({ id: mid, name, text, role }) => ({ id: mid, name, text, role }),
+        ),
         turns: final,
         elapsedSec: elapsedRef.current,
       });
@@ -202,7 +240,8 @@ export function WrittenScreen() {
     } catch (e) {
       setPhase("error");
       setError({
-        text: e instanceof Error ? e.message : "Non riesco a correggere la prova.",
+        text:
+          e instanceof Error ? e.message : "Non riesco a correggere la prova.",
         retry: () => void submit(),
       });
     }
@@ -218,7 +257,9 @@ export function WrittenScreen() {
           <IconArrowLeft size={18} />
           Esci
         </Link>
-        <p className="hidden truncate text-sm text-ink-faint sm:block">{session ? modeLabel(session) : ""}</p>
+        <p className="hidden truncate text-sm text-ink-faint sm:block">
+          {session ? modeLabel(session) : ""}
+        </p>
         <div className="flex items-center gap-2">
           {phase === "ready" ? (
             <span className="hidden sm:block">
@@ -230,7 +271,9 @@ export function WrittenScreen() {
           ) : null}
           <div
             role="timer"
-            aria-label={timeUp ? "Tempo scaduto" : `Tempo rimasto ${fmtTime(remaining)}`}
+            aria-label={
+              timeUp ? "Tempo scaduto" : `Tempo rimasto ${fmtTime(remaining)}`
+            }
             className={cn(
               "rounded-full px-3.5 py-1.5 font-medium tabular ring-1 transition-colors",
               timeUp
@@ -250,7 +293,11 @@ export function WrittenScreen() {
           Apro la prova…
         </p>
       ) : phase === "generating" ? (
-        <div className="mx-auto my-auto max-w-sm px-6 py-16 text-center" aria-busy="true" aria-live="polite">
+        <div
+          className="mx-auto my-auto max-w-sm px-6 py-16 text-center"
+          aria-busy="true"
+          aria-live="polite"
+        >
           <span className="mx-auto flex w-fit gap-1.5" aria-hidden="true">
             {[0, 1, 2].map((i) => (
               <span
@@ -260,13 +307,19 @@ export function WrittenScreen() {
               />
             ))}
           </span>
-          <h1 className="mt-6 text-[1.75rem] leading-tight font-medium">Preparo la tua prova…</h1>
+          <h1 className="mt-6 text-[1.75rem] leading-tight font-medium">
+            Preparo la tua prova…
+          </h1>
           <p className="mt-3 leading-relaxed text-ink-soft">
-            L’AI sta scrivendo le domande sui tuoi materiali. Ci vuole qualche secondo.
+            L’AI sta scrivendo le domande sui tuoi materiali. Ci vuole qualche
+            secondo.
           </p>
         </div>
       ) : phase === "error" ? (
-        <div className="mx-auto my-auto max-w-md px-6 py-16 text-center" role="alert">
+        <div
+          className="mx-auto my-auto max-w-md px-6 py-16 text-center"
+          role="alert"
+        >
           <h1 className="text-2xl font-medium">Qualcosa si è interrotto</h1>
           <p className="mt-3 leading-relaxed text-ink-soft">{error?.text}</p>
           <div className="mt-6 flex justify-center gap-3">
@@ -282,7 +335,8 @@ export function WrittenScreen() {
             <article className="rounded-[var(--radius-card)] bg-card px-5 py-7 shadow-[var(--shadow-card)] sm:px-10 sm:py-10 print:shadow-none">
               <header className="border-b border-line/70 pb-6">
                 <p className="text-sm text-ink-faint">
-                  {modeLabel(session)}, {turns.length} {turns.length === 1 ? "domanda" : "domande"},{" "}
+                  {modeLabel(session)}, {turns.length}{" "}
+                  {turns.length === 1 ? "domanda" : "domande"},{" "}
                   {session.durationMin} minuti
                 </p>
                 <h1 className="mt-1 text-[1.75rem] leading-tight font-medium text-balance sm:text-[2.125rem]">
@@ -291,16 +345,29 @@ export function WrittenScreen() {
                 <p className="mt-3 max-w-prose text-[15px] leading-relaxed text-ink-soft">
                   {INSTRUCTIONS[session.mode]}
                 </p>
+                {materialsRef.current.some((m) => m.role === "modello") ? (
+                  <p className="mt-2 text-sm text-ink-faint">
+                    Impostata sul modello di:{" "}
+                    {materialsRef.current
+                      .filter((m) => m.role === "modello")
+                      .map((m) => m.name)
+                      .join(", ")}
+                  </p>
+                ) : null}
                 {timeUp ? (
                   <p className="mt-4 rounded-[10px] bg-amber-soft px-4 py-3 text-sm text-amber-deep print:hidden">
-                    Tempo scaduto. Finisci la frase e consegna quando sei pronto.
+                    Tempo scaduto. Finisci la frase e consegna quando sei
+                    pronto.
                   </p>
                 ) : null}
               </header>
 
               <ol className="divide-y divide-line/70">
                 {turns.map((t, i) => (
-                  <li key={t.id} className="py-7 last:pb-0 print:break-inside-avoid">
+                  <li
+                    key={t.id}
+                    className="py-7 last:pb-0 print:break-inside-avoid"
+                  >
                     <Question
                       turn={t}
                       number={i + 1}
@@ -318,17 +385,28 @@ export function WrittenScreen() {
               <p className="text-sm text-ink-soft" aria-live="polite">
                 {confirming ? (
                   <span className="text-amber-deep">
-                    {missing === 1 ? "Una domanda è" : `${missing} domande sono`} senza risposta. Le consegni
-                    così?
+                    {missing === 1
+                      ? "Una domanda è"
+                      : `${missing} domande sono`}{" "}
+                    senza risposta. Le consegni così?
                   </span>
                 ) : (
                   <>
-                    Hai risposto a <span className="font-medium text-ink tabular">{answered}</span> di{" "}
-                    <span className="tabular">{turns.length}</span>. Le risposte si salvano da sole.
+                    Hai risposto a{" "}
+                    <span className="font-medium text-ink tabular">
+                      {answered}
+                    </span>{" "}
+                    di <span className="tabular">{turns.length}</span>. Le
+                    risposte si salvano da sole.
                   </>
                 )}
               </p>
-              <Button size="lg" onClick={() => void submit()} disabled={phase === "submitting"} className="shrink-0">
+              <Button
+                size="lg"
+                onClick={() => void submit()}
+                disabled={phase === "submitting"}
+                className="shrink-0"
+              >
                 {phase === "submitting"
                   ? "Correggo la prova…"
                   : confirming
@@ -358,10 +436,18 @@ function Question({
   const heading = (
     <>
       <p className="text-[13px] text-ink-faint">
-        {number}. {turn.kind === "multipla" ? "A crocette" : turn.kind === "traccia" ? "Elaborato" : "Domanda aperta"}
+        {number}.{" "}
+        {turn.kind === "multipla"
+          ? "A crocette"
+          : turn.kind === "traccia"
+            ? "Elaborato"
+            : "Domanda aperta"}
         {turn.topic ? `, ${turn.topic}` : ""}
       </p>
-      <p id={labelId} className="mt-1.5 font-serif text-[1.2rem] leading-snug text-ink sm:text-[1.3rem]">
+      <p
+        id={labelId}
+        className="mt-1.5 font-serif text-[1.2rem] leading-snug text-ink sm:text-[1.3rem]"
+      >
         {turn.question}
       </p>
     </>
@@ -379,7 +465,9 @@ function Question({
                 key={opt}
                 className={cn(
                   "flex cursor-pointer items-start gap-3 rounded-[10px] px-3.5 py-3 ring-1 transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-teal",
-                  checked ? "bg-teal-soft ring-teal" : "ring-line hover:bg-paper",
+                  checked
+                    ? "bg-teal-soft ring-teal"
+                    : "ring-line hover:bg-paper",
                 )}
               >
                 <input
@@ -418,7 +506,9 @@ function Question({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={long ? 14 : 6}
-        placeholder={long ? "Scrivi qui il tuo elaborato…" : "Scrivi qui la tua risposta…"}
+        placeholder={
+          long ? "Scrivi qui il tuo elaborato…" : "Scrivi qui la tua risposta…"
+        }
         className="mt-4 block w-full resize-y rounded-[10px] bg-paper/60 p-3.5 text-[16px] leading-relaxed text-ink ring-1 ring-line placeholder:text-ink-faint focus:bg-card focus:ring-2 focus:ring-teal focus:outline-none print:bg-transparent"
       />
       <p className="mt-1.5 text-right text-[13px] text-ink-faint tabular print:hidden">

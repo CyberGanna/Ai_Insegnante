@@ -1,10 +1,13 @@
 export type MaterialKind = "pdf" | "docx" | "image" | "audio" | "video" | "url" | "text";
 export type MaterialStatus = "reading" | "ready" | "error";
+/** studio = appunti su cui fare le domande; modello = verifica vecchia da cui copiare struttura e stile. */
+export type MaterialRole = "studio" | "modello";
 
 export interface Material {
   id: string;
   name: string;
   kind: MaterialKind;
+  role: MaterialRole;
   status: MaterialStatus;
   /** Percorso nell’archivio (Supabase Storage) o URL della pagina. */
   source: string | null;

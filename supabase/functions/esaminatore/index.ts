@@ -158,7 +158,7 @@ export interface SessionContext {
     focus_topics: string[];
     score_max: 10 | 100;
   };
-  materials: { name: string; text: string }[];
+  materials: { name: string; text: string; role: "studio" | "modello" }[];
   turns: {
     idx: number;
     question: string;
@@ -176,15 +176,15 @@ async function loadSession(supabase: SupabaseClient, sessionId: string): Promise
   const ids = (session.session_materials as { material_id: string }[]).map((r) => r.material_id);
   const [{ data: materials }, { data: turns }, { data: profile }] = await Promise.all([
     ids.length
-      ? supabase.from("materials").select("name, extracted_text").in("id", ids)
-      : Promise.resolve({ data: [] as { name: string; extracted_text: string | null }[] }),
+      ? supabase.from("materials").select("name, extracted_text, role").in("id", ids)
+      : Promise.resolve({ data: [] as { name: string; extracted_text: string | null; role: "studio" | "modello" }[] }),
     supabase.from("turns").select("idx, question, topic, is_follow_up, kind, options, answer").eq("session_id", sessionId).order("idx"),
     supabase.from("profiles").select("name").maybeSingle(),
   ]);
   return {
     studentName: profile?.name ?? "",
     session,
-    materials: (materials ?? []).map((m) => ({ name: m.name, text: m.extracted_text ?? "" })),
+    materials: (materials ?? []).map((m) => ({ name: m.name, text: m.extracted_text ?? "", role: m.role ?? "studio" })),
     turns: turns ?? [],
   };
 }

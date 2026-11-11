@@ -2,13 +2,20 @@ import type { Session } from "@/lib/types";
 import { formatDate, formatScore } from "./ui";
 
 /** Voto riportato in decimi, per confrontare maturità (su 100) e il resto (su 10). */
-export const toTenths = (s: Pick<Session, "score" | "scoreMax">) => ((s.score ?? 0) * 10) / s.scoreMax;
+export const toTenths = (s: Pick<Session, "score" | "scoreMax">) =>
+  ((s.score ?? 0) * 10) / s.scoreMax;
 
 /**
  * Andamento dei voti nel tempo. La linea tratteggiata è la sufficienza (6/10):
  * è il riferimento che uno studente guarda per primo.
  */
-export function ProgressChart({ sessions, height = 140 }: { sessions: Session[]; height?: number }) {
+export function ProgressChart({
+  sessions,
+  height = 140,
+}: {
+  sessions: Session[];
+  height?: number;
+}) {
   const done = sessions
     .filter((s) => s.status === "completata" && s.score != null)
     .sort((a, b) => a.startedAt.localeCompare(b.startedAt))
@@ -25,10 +32,13 @@ export function ProgressChart({ sessions, height = 140 }: { sessions: Session[];
   const W = 300;
   const H = height;
   const pad = { t: 12, r: 12, b: 22, l: 24 };
-  const x = (i: number) => pad.l + (i * (W - pad.l - pad.r)) / (done.length - 1);
+  const x = (i: number) =>
+    pad.l + (i * (W - pad.l - pad.r)) / (done.length - 1);
   const y = (v: number) => pad.t + (1 - v / 10) * (H - pad.t - pad.b);
   const pts = done.map((s, i) => [x(i), y(toTenths(s))] as const);
-  const line = pts.map(([px, py], i) => `${i ? "L" : "M"}${px.toFixed(1)},${py.toFixed(1)}`).join(" ");
+  const line = pts
+    .map(([px, py], i) => `${i ? "L" : "M"}${px.toFixed(1)},${py.toFixed(1)}`)
+    .join(" ");
   const area = `${line} L${pts.at(-1)![0].toFixed(1)},${y(0)} L${pts[0][0].toFixed(1)},${y(0)} Z`;
   const last = done.at(-1)!;
   const first = done[0];
@@ -61,7 +71,12 @@ export function ProgressChart({ sessions, height = 140 }: { sessions: Session[];
               strokeDasharray={v === 6 ? "3 4" : undefined}
               strokeWidth={1}
             />
-            <text x={pad.l - 8} y={y(v) + 4} textAnchor="end" className="fill-ink-faint text-[10px] tabular">
+            <text
+              x={pad.l - 8}
+              y={y(v) + 4}
+              textAnchor="end"
+              className="fill-ink-faint text-[10px] tabular"
+            >
               {v}
             </text>
           </g>
@@ -81,27 +96,40 @@ export function ProgressChart({ sessions, height = 140 }: { sessions: Session[];
             cx={px}
             cy={py}
             r={i === pts.length - 1 ? 4.5 : 2.5}
-            fill={i === pts.length - 1 ? "var(--color-amber)" : "var(--color-card)"}
-            stroke={i === pts.length - 1 ? "var(--color-card)" : "var(--color-teal)"}
+            fill={
+              i === pts.length - 1 ? "var(--color-amber)" : "var(--color-card)"
+            }
+            stroke={
+              i === pts.length - 1 ? "var(--color-card)" : "var(--color-teal)"
+            }
             strokeWidth={i === pts.length - 1 ? 2 : 1.5}
           />
         ))}
         <text x={pad.l} y={H - 4} className="fill-ink-faint text-[10px]">
           {formatDate(first.startedAt)}
         </text>
-        <text x={W - pad.r} y={H - 4} textAnchor="end" className="fill-ink-faint text-[10px]">
+        <text
+          x={W - pad.r}
+          y={H - 4}
+          textAnchor="end"
+          className="fill-ink-faint text-[10px]"
+        >
           {formatDate(last.startedAt)}
         </text>
       </svg>
       <figcaption className="mt-2 text-sm text-ink-soft">
         Ultimo voto{" "}
-        <span className="font-medium text-amber-deep tabular">{formatScore(last.score, last.scoreMax)}</span>
+        <span className="font-medium text-amber-deep tabular">
+          {formatScore(last.score, last.scoreMax)}
+        </span>
         {Math.abs(delta) >= 0.1 ? (
           <>
             {", "}
             {delta > 0 ? "+" : "−"}
             <span className="tabular">
-              {Math.abs(delta).toLocaleString("it-IT", { maximumFractionDigits: 1 })}
+              {Math.abs(delta).toLocaleString("it-IT", {
+                maximumFractionDigits: 1,
+              })}
             </span>{" "}
             punti dalla prima
           </>

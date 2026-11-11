@@ -12,7 +12,13 @@ export type OrbState = "idle" | "thinking" | "speaking" | "listening";
  * - pensa: l’onda si calma e ruota piano
  * Disegnato in SVG e aggiornato con requestAnimationFrame, senza re-render React.
  */
-export function SoundOrb({ state, stream }: { state: OrbState; stream: MediaStream | null }) {
+export function SoundOrb({
+  state,
+  stream,
+}: {
+  state: OrbState;
+  stream: MediaStream | null;
+}) {
   const outer = useRef<SVGPathElement>(null);
   const inner = useRef<SVGPathElement>(null);
   const stateRef = useRef(state);
@@ -28,7 +34,9 @@ export function SoundOrb({ state, stream }: { state: OrbState; stream: MediaStre
       return;
     }
     const Ctx =
-      window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      window.AudioContext ??
+      (window as unknown as { webkitAudioContext: typeof AudioContext })
+        .webkitAudioContext;
     const ctx = new Ctx();
     const source = ctx.createMediaStreamSource(stream);
     const analyser = ctx.createAnalyser();
@@ -56,7 +64,9 @@ export function SoundOrb({ state, stream }: { state: OrbState; stream: MediaStre
   }, [stream]);
 
   useEffect(() => {
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduce = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
     const N = 120;
     const R = 100;
     let raf = 0;
@@ -83,7 +93,9 @@ export function SoundOrb({ state, stream }: { state: OrbState; stream: MediaStre
       const t = (now - start) / 1000;
       const s = stateRef.current;
       let target = 1.5;
-      if (s === "speaking") target = 7 + (Math.sin(t * 5.3) * 0.5 + 0.5) * 6 + Math.sin(t * 13.7) * 2;
+      if (s === "speaking")
+        target =
+          7 + (Math.sin(t * 5.3) * 0.5 + 0.5) * 6 + Math.sin(t * 13.7) * 2;
       else if (s === "listening") target = 2 + levelRef.current * 22;
       else if (s === "thinking") target = 3;
       amp += (target - amp) * 0.12;
@@ -100,22 +112,34 @@ export function SoundOrb({ state, stream }: { state: OrbState; stream: MediaStre
   const color = listening ? "var(--color-amber)" : "var(--color-teal)";
 
   return (
-    <div className="relative mx-auto aspect-square w-[min(68vw,19rem)] sm:w-[22rem]" aria-hidden="true">
+    <div
+      className="relative mx-auto aspect-square w-[min(68vw,19rem)] sm:w-[22rem]"
+      aria-hidden="true"
+    >
       {/* Anelli che si allargano mentre l’esaminatore parla */}
       {state === "speaking"
         ? [0, 1].map((i) => (
             <span
               key={i}
               className="absolute inset-[8%] rounded-full border-2 border-teal/40"
-              style={{ animation: `orb-breathe 2.4s ease-in-out ${i * 1.2}s infinite` }}
+              style={{
+                animation: `orb-breathe 2.4s ease-in-out ${i * 1.2}s infinite`,
+              }}
             />
           ))
         : null}
-      <svg viewBox="0 0 240 240" className="absolute inset-0 h-full w-full overflow-visible">
+      <svg
+        viewBox="0 0 240 240"
+        className="absolute inset-0 h-full w-full overflow-visible"
+      >
         <defs>
           <radialGradient id="orb-core" cx="50%" cy="42%" r="60%">
             <stop offset="0" stopColor="#ffffff" stopOpacity="0.95" />
-            <stop offset="1" stopColor={listening ? "#fbefdc" : "#e2efed"} stopOpacity="1" />
+            <stop
+              offset="1"
+              stopColor={listening ? "#fbefdc" : "#e2efed"}
+              stopOpacity="1"
+            />
           </radialGradient>
         </defs>
         <path
@@ -137,9 +161,17 @@ export function SoundOrb({ state, stream }: { state: OrbState; stream: MediaStre
       <div
         className={cn(
           "absolute inset-[36%] rounded-full transition-colors duration-500",
-          listening ? "bg-amber/90" : state === "thinking" ? "bg-teal/50" : "bg-teal",
+          listening
+            ? "bg-amber/90"
+            : state === "thinking"
+              ? "bg-teal/50"
+              : "bg-teal",
         )}
-        style={state === "thinking" ? { animation: "status-pulse 1.6s ease-in-out infinite" } : undefined}
+        style={
+          state === "thinking"
+            ? { animation: "status-pulse 1.6s ease-in-out infinite" }
+            : undefined
+        }
       />
     </div>
   );

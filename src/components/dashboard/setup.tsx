@@ -5,8 +5,6 @@ import {
   IconBriefcase,
   IconChat,
   IconLaurel,
-  IconMic,
-  IconPencil,
   IconSpeaker,
 } from "@/components/icons";
 import { cn } from "@/components/ui";
@@ -140,96 +138,23 @@ export function ModePicker({
   );
 }
 
-const FORMATS: {
-  value: ExamFormat;
-  title: string;
-  text: Record<ExamMode, string>;
-  icon: typeof IconMic;
-}[] = [
-  {
-    value: "orale",
-    title: "A voce",
-    icon: IconMic,
-    text: {
-      interrogazione:
-        "L’esaminatore ti fa una domanda alla volta e tu rispondi parlando.",
-      maturita:
-        "La commissione ti propone uno spunto e ti ascolta mentre colleghi le materie.",
-      colloquio: "Il selezionatore ti fa le domande e tu rispondi parlando.",
-    },
+const FORMAT_HINT: Record<ExamFormat, Record<ExamMode, string>> = {
+  orale: {
+    interrogazione:
+      "L’esaminatore ti fa una domanda alla volta e tu rispondi parlando.",
+    maturita:
+      "La commissione ti propone uno spunto e ti ascolta mentre colleghi le materie.",
+    colloquio: "Il selezionatore ti fa le domande e tu rispondi parlando.",
   },
-  {
-    value: "scritto",
-    title: "Per iscritto",
-    icon: IconPencil,
-    text: {
-      interrogazione:
-        "L’AI prepara una verifica con domande aperte e a crocette. La consegni e lei la corregge.",
-      maturita:
-        "Un elaborato su più argomenti e alcune domande aperte, da consegnare e far correggere.",
-      colloquio:
-        "Un test scritto da candidato: domande sul ruolo, casi pratici e risposte a scelta.",
-    },
+  scritto: {
+    interrogazione:
+      "L’AI prepara una verifica con domande aperte e a crocette. La consegni e lei la corregge.",
+    maturita:
+      "Un elaborato su più argomenti e alcune domande aperte, da consegnare e far correggere.",
+    colloquio:
+      "Un test scritto di selezione: domande sul ruolo, casi pratici e risposte a scelta.",
   },
-];
-
-export function FormatPicker({
-  value,
-  mode,
-  onChange,
-}: {
-  value: ExamFormat;
-  mode: ExamMode;
-  onChange: (f: ExamFormat) => void;
-}) {
-  const name = useId();
-  return (
-    <fieldset className="mt-4">
-      <legend className="mb-2 text-[15px] font-medium text-ink">
-        Come vuoi rispondere
-      </legend>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {FORMATS.map(({ value: v, title, text, icon: Icon }) => {
-          const checked = v === value;
-          return (
-            <label
-              key={v}
-              className={cn(
-                "flex cursor-pointer items-start gap-3 rounded-[var(--radius-card)] bg-card p-4 shadow-[var(--shadow-card)] ring-1 transition-[box-shadow] has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-teal",
-                checked
-                  ? "ring-2 ring-teal"
-                  : "ring-transparent hover:shadow-[var(--shadow-lift)]",
-              )}
-            >
-              <input
-                type="radio"
-                name={name}
-                value={v}
-                checked={checked}
-                onChange={() => onChange(v)}
-                className="sr-only"
-              />
-              <span
-                className={cn(
-                  "grid size-9 shrink-0 place-items-center rounded-full transition-colors",
-                  checked ? "bg-teal text-white" : "bg-paper text-ink-soft",
-                )}
-              >
-                <Icon size={18} />
-              </span>
-              <span className="min-w-0">
-                <span className="block font-medium text-ink">{title}</span>
-                <span className="mt-0.5 block text-sm leading-relaxed text-ink-soft">
-                  {text[mode]}
-                </span>
-              </span>
-            </label>
-          );
-        })}
-      </div>
-    </fieldset>
-  );
-}
+};
 
 function Segmented<T extends string | number>({
   legend,
@@ -288,15 +213,20 @@ const SAMPLE: Record<Voice, string> = {
 };
 
 export function ExamSettings({
+  format,
+  mode,
+  onFormat,
   duration,
   difficulty,
   voice,
   onDuration,
   onDifficulty,
   onVoice,
-  showVoice = true,
 }: {
-  showVoice?: boolean;
+  /** Senza onFormat (pagina Impostazioni) la scelta del formato non compare. */
+  format?: ExamFormat;
+  mode?: ExamMode;
+  onFormat?: (f: ExamFormat) => void;
   duration: Duration;
   difficulty: Difficulty;
   voice: Voice;
@@ -323,7 +253,23 @@ export function ExamSettings({
   }
 
   return (
-    <div className="grid gap-x-6 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-x-6 gap-y-5 sm:grid-cols-2">
+      {onFormat && format && mode ? (
+        <Segmented<ExamFormat>
+          legend="Come rispondi"
+          value={format}
+          onChange={onFormat}
+          options={[
+            { value: "orale", label: "A voce" },
+            { value: "scritto", label: "Per iscritto" },
+          ]}
+          aside={
+            <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+              {FORMAT_HINT[format][mode]}
+            </p>
+          }
+        />
+      ) : null}
       <Segmented<Duration>
         legend="Durata"
         value={duration}
@@ -344,7 +290,7 @@ export function ExamSettings({
           { value: "esigente", label: "Esigente" },
         ]}
       />
-      {showVoice ? (
+      {format !== "scritto" ? (
         <Segmented<Voice>
           legend="Voce dell’esaminatore"
           value={voice}

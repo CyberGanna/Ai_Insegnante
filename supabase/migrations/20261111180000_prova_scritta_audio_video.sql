@@ -1,4 +1,4 @@
--- Prova scritta e materiali audio/video.
+-- Prova scritta, materiali audio/video e verifiche di esempio.
 
 -- Audio e video vengono trascritti e usati come appunti.
 alter type public.material_kind add value if not exists 'audio';
@@ -28,3 +28,7 @@ set
     'video/mp4', 'video/webm'
   ]
 where id = 'materials';
+
+-- Verifiche vecchie caricate come modello: l'AI ne copia struttura e stile, non gli argomenti.
+create type public.material_role as enum ('studio', 'modello');
+alter table public.materials add column role public.material_role not null default 'studio';

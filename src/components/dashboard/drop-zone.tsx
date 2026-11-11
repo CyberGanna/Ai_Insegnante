@@ -4,7 +4,12 @@ import { useId, useRef, useState } from "react";
 import { useStore } from "@/components/providers";
 import { IconLink, IconUpload } from "@/components/icons";
 import { Button, cn } from "@/components/ui";
-import { ACCEPT, addAndRead, normalizeUrl, validateFile } from "@/lib/materials";
+import {
+  ACCEPT,
+  addAndRead,
+  normalizeUrl,
+  validateFile,
+} from "@/lib/materials";
 
 export function DropZone() {
   const store = useStore();
@@ -27,7 +32,9 @@ export function DropZone() {
       try {
         await addAndRead(store, { kind: "file", file });
       } catch (e) {
-        errors.push(`${file.name}: ${e instanceof Error ? e.message : "caricamento non riuscito."}`);
+        errors.push(
+          `${file.name}: ${e instanceof Error ? e.message : "caricamento non riuscito."}`,
+        );
       }
     }
     setMessage(errors.length ? errors.join(" ") : null);
@@ -36,7 +43,9 @@ export function DropZone() {
   async function addUrl(raw: string) {
     const normalized = normalizeUrl(raw);
     if (!normalized) {
-      setMessage("Questo link non sembra valido. Controlla che inizi con https://");
+      setMessage(
+        "Questo link non sembra valido. Controlla che inizi con https://",
+      );
       return false;
     }
     setMessage(null);
@@ -44,7 +53,9 @@ export function DropZone() {
       await addAndRead(store, { kind: "url", url: normalized });
       return true;
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : "Non riesco ad aggiungere il link.");
+      setMessage(
+        e instanceof Error ? e.message : "Non riesco ad aggiungere il link.",
+      );
       return false;
     }
   }
@@ -60,14 +71,17 @@ export function DropZone() {
         }}
         onDragOver={(e) => e.preventDefault()}
         onDragLeave={(e) => {
-          if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragging(false);
+          if (!e.currentTarget.contains(e.relatedTarget as Node))
+            setDragging(false);
         }}
         onDrop={(e) => {
           e.preventDefault();
           setDragging(false);
           if (e.dataTransfer.files.length) void addFiles(e.dataTransfer.files);
           else {
-            const text = e.dataTransfer.getData("text/uri-list") || e.dataTransfer.getData("text/plain");
+            const text =
+              e.dataTransfer.getData("text/uri-list") ||
+              e.dataTransfer.getData("text/plain");
             if (text) void addUrl(text);
           }
         }}
@@ -86,7 +100,9 @@ export function DropZone() {
         }}
         className={cn(
           "relative rounded-[var(--radius-card)] border-[1.5px] border-dashed px-5 py-8 text-center transition-colors sm:px-8 sm:py-10",
-          dragging ? "border-teal bg-teal-soft/70" : "border-[#cfc8b8] bg-card/60",
+          dragging
+            ? "border-teal bg-teal-soft/70"
+            : "border-[#cfc8b8] bg-card/60",
         )}
       >
         <div
@@ -101,8 +117,9 @@ export function DropZone() {
           Trascina qui appunti, PDF, foto o incolla un link
         </p>
         <p id={hintId} className="mx-auto mt-2 max-w-md text-sm text-ink-soft">
-          PDF, Word, testo, foto di pagine scritte a mano o stampate (fino a 20 MB). Audio e video di una lezione
-          (MP3, M4A, MP4, fino a 25 MB): li trascriviamo e li usiamo come appunti.
+          PDF, Word, testo, foto di pagine scritte a mano o stampate (fino a 20
+          MB). Audio e video di una lezione (MP3, M4A, MP4, fino a 25 MB): li
+          trascriviamo e li usiamo come appunti.
         </p>
 
         <div className="mt-6 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
@@ -152,7 +169,10 @@ export function DropZone() {
           </form>
         </div>
       </div>
-      <p aria-live="polite" className={cn("text-sm text-danger", message && "mt-3")}>
+      <p
+        aria-live="polite"
+        className={cn("text-sm text-danger", message && "mt-3")}
+      >
         {message}
       </p>
     </div>

@@ -29,7 +29,8 @@ export function Sessions() {
           <Card className="p-8 text-center">
             <p className="font-serif text-xl">Ancora nessuna simulazione</p>
             <p className="mt-2 text-ink-soft">
-              Carica i tuoi appunti nella dashboard e fai la prima prova: bastano dieci minuti.
+              Carica i tuoi appunti nella dashboard e fai la prima prova:
+              bastano dieci minuti.
             </p>
           </Card>
         )}

@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { forwardRef } from "react";
 
-export const cn = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(" ");
+export const cn = (...c: (string | false | null | undefined)[]) =>
+  c.filter(Boolean).join(" ");
 
 type Variant = "primary" | "secondary" | "ghost";
 
@@ -24,12 +25,21 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   size?: keyof typeof sizes;
 };
 
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { variant = "primary", size = "md", className, type = "button", ...rest },
-  ref,
-) {
-  return <button ref={ref} type={type} className={cn(base, variants[variant], sizes[size], className)} {...rest} />;
-});
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  function Button(
+    { variant = "primary", size = "md", className, type = "button", ...rest },
+    ref,
+  ) {
+    return (
+      <button
+        ref={ref}
+        type={type}
+        className={cn(base, variants[variant], sizes[size], className)}
+        {...rest}
+      />
+    );
+  },
+);
 
 export function ButtonLink({
   href,
@@ -37,13 +47,31 @@ export function ButtonLink({
   size = "md",
   className,
   ...rest
-}: React.ComponentProps<typeof Link> & { variant?: Variant; size?: keyof typeof sizes }) {
-  return <Link href={href} className={cn(base, variants[variant], sizes[size], className)} {...rest} />;
+}: React.ComponentProps<typeof Link> & {
+  variant?: Variant;
+  size?: keyof typeof sizes;
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(base, variants[variant], sizes[size], className)}
+      {...rest}
+    />
+  );
 }
 
-export function Card({ className, ...rest }: React.HTMLAttributes<HTMLDivElement>) {
+export function Card({
+  className,
+  ...rest
+}: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn("rounded-[var(--radius-card)] bg-card shadow-[var(--shadow-card)]", className)} {...rest} />
+    <div
+      className={cn(
+        "rounded-[var(--radius-card)] bg-card shadow-[var(--shadow-card)]",
+        className,
+      )}
+      {...rest}
+    />
   );
 }
 
@@ -58,7 +86,10 @@ export function SectionTitle({
 }) {
   return (
     <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-      <h2 id={id} className="text-[1.375rem] leading-tight font-medium text-ink">
+      <h2
+        id={id}
+        className="text-[1.375rem] leading-tight font-medium text-ink"
+      >
         {children}
       </h2>
       {hint ? <p className="text-sm text-ink-soft">{hint}</p> : null}
@@ -69,11 +100,17 @@ export function SectionTitle({
 /** Formatta un voto in italiano: 7,5/10 oppure 82/100. */
 export function formatScore(score: number | null, max: 10 | 100) {
   if (score == null) return "–";
-  const n = max === 100 ? Math.round(score).toString() : score.toLocaleString("it-IT", { maximumFractionDigits: 1 });
+  const n =
+    max === 100
+      ? Math.round(score).toString()
+      : score.toLocaleString("it-IT", { maximumFractionDigits: 1 });
   return `${n}/${max}`;
 }
 
-const dateFmt = new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "short" });
+const dateFmt = new Intl.DateTimeFormat("it-IT", {
+  day: "numeric",
+  month: "short",
+});
 const dateTimeFmt = new Intl.DateTimeFormat("it-IT", {
   day: "numeric",
   month: "long",
@@ -81,7 +118,8 @@ const dateTimeFmt = new Intl.DateTimeFormat("it-IT", {
   minute: "2-digit",
 });
 export const formatDate = (iso: string) => dateFmt.format(new Date(iso));
-export const formatDateTime = (iso: string) => dateTimeFmt.format(new Date(iso));
+export const formatDateTime = (iso: string) =>
+  dateTimeFmt.format(new Date(iso));
 
 export function formatBytes(n: number | null) {
   if (n == null) return "";

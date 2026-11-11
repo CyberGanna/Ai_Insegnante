@@ -133,7 +133,9 @@ export function createLocalStore(): DataStore {
     },
 
     async listMaterials() {
-      return [...read().materials].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+      return read()
+        .materials.map((m) => ({ ...m, role: m.role ?? "studio" }))
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     },
     async addMaterial(input: NewMaterial) {
       const id = uid();
@@ -143,6 +145,7 @@ export function createLocalStore(): DataStore {
               id,
               name: input.url.replace(/^https?:\/\//, "").replace(/\/$/, ""),
               kind: "url",
+              role: input.role ?? "studio",
               status: "reading",
               source: input.url,
               sizeBytes: null,
@@ -154,6 +157,7 @@ export function createLocalStore(): DataStore {
               id,
               name: input.file.name,
               kind: kindForFile(input.file) ?? "text",
+              role: input.role ?? "studio",
               status: "reading",
               source: `locale/${id}`,
               sizeBytes: input.file.size,

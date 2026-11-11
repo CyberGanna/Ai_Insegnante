@@ -1,12 +1,14 @@
-import type { Material, Profile, Report, Session, SessionConfig, Turn } from "@/lib/types";
+import type { Material, MaterialRole, Profile, Report, Session, SessionConfig, Turn } from "@/lib/types";
 
 export interface NewMaterialFile {
   kind: "file";
   file: File;
+  role?: MaterialRole;
 }
 export interface NewMaterialUrl {
   kind: "url";
   url: string;
+  role?: MaterialRole;
 }
 export type NewMaterial = NewMaterialFile | NewMaterialUrl;
 

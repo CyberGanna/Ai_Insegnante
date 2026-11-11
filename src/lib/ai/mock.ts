@@ -26,6 +26,8 @@ interface Topic {
 function topicsFrom(materials: ExamContext["materials"]): Topic[] {
   const topics: Topic[] = [];
   for (const m of materials) {
+    // Le verifiche di esempio danno lo stile, non gli argomenti.
+    if (m.role === "modello") continue;
     const lines = (m.text ?? "").split(/\r?\n/).map((l) => l.trim());
     let current: Topic | null = null;
     for (const line of lines) {

@@ -10,7 +10,7 @@ import type { Material, QuestionKind, Session, Turn, Voice } from "@/lib/types";
 
 export interface ExamContext {
   session: Session;
-  materials: Pick<Material, "id" | "name" | "text">[];
+  materials: Pick<Material, "id" | "name" | "text" | "role">[];
   /** Turni già fatti, con la risposta trascritta. */
   turns: Turn[];
   elapsedSec: number;

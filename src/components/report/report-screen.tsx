@@ -14,17 +14,23 @@ export function ReportScreen() {
   const id = useSearchParams().get("id") ?? "";
   const store = useStore();
   const router = useRouter();
-  const { data, isLoading, error } = useSWR(id ? keys.report(id) : null, async () => {
-    const [session, report, turns] = await Promise.all([
-      store.getSession(id),
-      store.getReport(id),
-      store.listTurns(id),
-    ]);
-    return { session, report, turns };
-  });
+  const { data, isLoading, error } = useSWR(
+    id ? keys.report(id) : null,
+    async () => {
+      const [session, report, turns] = await Promise.all([
+        store.getSession(id),
+        store.getReport(id),
+        store.listTurns(id),
+      ]);
+      return { session, report, turns };
+    },
+  );
   const [retrying, setRetrying] = useState(false);
 
-  if (isLoading) return <p className="px-6 py-16 text-center text-ink-soft">Carico il report…</p>;
+  if (isLoading)
+    return (
+      <p className="px-6 py-16 text-center text-ink-soft">Carico il report…</p>
+    );
   if (error || !data?.session || !data.report) {
     return (
       <div className="mx-auto max-w-md px-6 py-16 text-center">
@@ -36,7 +42,9 @@ export function ReportScreen() {
         </p>
         <div className="mt-6 flex justify-center gap-3">
           {data?.session ? (
-            <ButtonLink href={examHref(data.session)}>Riprendi la simulazione</ButtonLink>
+            <ButtonLink href={examHref(data.session)}>
+              Riprendi la simulazione
+            </ButtonLink>
           ) : null}
           <ButtonLink href="/" variant="secondary">
             Torna alla dashboard
@@ -68,7 +76,10 @@ export function ReportScreen() {
           materialIds: session!.materialIds,
           focusTopics: report!.weakTopics,
         },
-        `Ripasso: ${report!.weakTopics.slice(0, 2).join(", ") || session!.title}`.slice(0, 80),
+        `Ripasso: ${report!.weakTopics.slice(0, 2).join(", ") || session!.title}`.slice(
+          0,
+          80,
+        ),
       );
       await mutate(keys.sessions);
       router.push(examHref(next));
@@ -93,10 +104,16 @@ export function ReportScreen() {
           aria-label={`Voto ${scoreText} su ${report.scoreMax}`}
           role="img"
         >
-          <span className="font-serif text-[3.5rem] leading-none font-semibold text-amber tabular" aria-hidden="true">
+          <span
+            className="font-serif text-[3.5rem] leading-none font-semibold text-amber tabular"
+            aria-hidden="true"
+          >
             {scoreText}
           </span>
-          <span className="mt-1 text-sm text-ink-faint tabular" aria-hidden="true">
+          <span
+            className="mt-1 text-sm text-ink-faint tabular"
+            aria-hidden="true"
+          >
             su {report.scoreMax}
           </span>
         </div>
@@ -104,11 +121,15 @@ export function ReportScreen() {
           <p className="text-sm text-ink-faint">
             {modeLabel(session)}, {formatDateTime(session.startedAt)}
           </p>
-          <h1 className="mt-1 text-[1.875rem] leading-tight font-medium sm:text-[2.25rem]">{session.title}</h1>
-          <p className="mt-3 max-w-prose leading-relaxed text-ink-soft">{report.summary}</p>
+          <h1 className="mt-1 text-[1.875rem] leading-tight font-medium sm:text-[2.25rem]">
+            {session.title}
+          </h1>
+          <p className="mt-3 max-w-prose leading-relaxed text-ink-soft">
+            {report.summary}
+          </p>
           <p className="mt-3 text-sm text-ink-faint">
-            {answered.length} {answered.length === 1 ? "risposta" : "risposte"} su {turns.length}{" "}
-            {turns.length === 1 ? "domanda" : "domande"}
+            {answered.length} {answered.length === 1 ? "risposta" : "risposte"}{" "}
+            su {turns.length} {turns.length === 1 ? "domanda" : "domande"}
             {passed ? ", sopra la sufficienza." : ", sotto la sufficienza."}
           </p>
         </div>
@@ -133,7 +154,10 @@ export function ReportScreen() {
           <ul className="mt-4 space-y-3">
             {report.improvements.map((s) => (
               <li key={s} className="flex gap-3 leading-relaxed">
-                <span className="mt-[0.55rem] size-2 shrink-0 rounded-full bg-amber" aria-hidden="true" />
+                <span
+                  className="mt-[0.55rem] size-2 shrink-0 rounded-full bg-amber"
+                  aria-hidden="true"
+                />
                 {s}
               </li>
             ))}
@@ -150,7 +174,12 @@ export function ReportScreen() {
               : "Nessuno in particolare: puoi alzare la difficoltà."}
           </p>
         </div>
-        <Button size="lg" onClick={retryWeak} disabled={retrying} className="shrink-0">
+        <Button
+          size="lg"
+          onClick={retryWeak}
+          disabled={retrying}
+          className="shrink-0"
+        >
           {retrying ? "Preparo…" : "Riprova sugli argomenti deboli"}
         </Button>
       </div>
@@ -164,14 +193,23 @@ export function ReportScreen() {
             <li key={t.id}>
               <Card className="p-5 sm:p-6">
                 <p className="text-[13px] text-ink-faint">
-                  {i + 1}. {t.isFollowUp ? "Approfondimento" : t.topic || "Domanda"}
-                  {t.kind === "multipla" ? ", a crocette" : t.kind === "traccia" ? ", elaborato" : ""}
+                  {i + 1}.{" "}
+                  {t.isFollowUp ? "Approfondimento" : t.topic || "Domanda"}
+                  {t.kind === "multipla"
+                    ? ", a crocette"
+                    : t.kind === "traccia"
+                      ? ", elaborato"
+                      : ""}
                 </p>
-                  <h3 className="mt-1.5 text-[1.2rem] leading-snug font-medium">{t.question}</h3>
+                <h3 className="mt-1.5 text-[1.2rem] leading-snug font-medium">
+                  {t.question}
+                </h3>
 
                 <div className="mt-5 grid gap-4 lg:grid-cols-2">
                   <div>
-                    <p className="text-sm font-medium text-ink-soft">La tua risposta</p>
+                    <p className="text-sm font-medium text-ink-soft">
+                      La tua risposta
+                    </p>
                     <p
                       className={cn(
                         "mt-1.5 leading-relaxed whitespace-pre-line [overflow-wrap:anywhere]",
@@ -180,12 +218,20 @@ export function ReportScreen() {
                     >
                       {t.answer ?? "Nessuna risposta."}
                     </p>
-                    {t.feedback ? <p className="mt-3 text-sm leading-relaxed text-amber-deep">{t.feedback}</p> : null}
+                    {t.feedback ? (
+                      <p className="mt-3 text-sm leading-relaxed text-amber-deep">
+                        {t.feedback}
+                      </p>
+                    ) : null}
                   </div>
                   {t.modelAnswer ? (
                     <div className="rounded-[10px] bg-paper p-4">
-                      <p className="text-sm font-medium text-teal">Una risposta migliore</p>
-                      <p className="mt-1.5 leading-relaxed text-ink">{t.modelAnswer}</p>
+                      <p className="text-sm font-medium text-teal">
+                        Una risposta migliore
+                      </p>
+                      <p className="mt-1.5 leading-relaxed text-ink">
+                        {t.modelAnswer}
+                      </p>
                     </div>
                   ) : null}
                 </div>

@@ -34,10 +34,18 @@ const TONE = {
 } as const;
 
 function systemPrompt(ctx: SessionContext) {
-  const { session, materials } = ctx;
-  const sources = materials.length
-    ? materials.map((m, i) => `<materiale n="${i + 1}" nome="${m.name}">\n${m.text}\n</materiale>`).join("\n\n")
+  const { session } = ctx;
+  const study = ctx.materials.filter((m) => m.role !== "modello");
+  const models = ctx.materials.filter((m) => m.role === "modello");
+  const sources = study.length
+    ? study.map((m, i) => `<materiale n="${i + 1}" nome="${m.name}">\n${m.text}\n</materiale>`).join("\n\n")
     : "(nessun materiale caricato)";
+  const examples = models.length
+    ? [
+        "Lo studente ha caricato prove vecchie dello stesso insegnante o della stessa scuola. Usale solo come modello di forma: imita tipo e numero di domande, consegne, lunghezza delle risposte richieste, livello e modo di valutare. Gli argomenti delle domande vengono invece dai materiali di studio, non dagli esempi.",
+        `<esempi_di_prova>\n${models.map((m, i) => `<esempio n="${i + 1}" nome="${m.name}">\n${m.text}\n</esempio>`).join("\n\n")}\n</esempi_di_prova>`,
+      ].join("\n\n")
+    : "";
   const written = session.format === "scritto";
   return [
     written ? WRITTEN_ROLE[session.mode] : MODE_ROLE[session.mode],
@@ -49,6 +57,7 @@ function systemPrompt(ctx: SessionContext) {
     "Resta sul materiale fornito. Non inventare argomenti che non ci sono.",
     session.job_posting ? `<annuncio>\n${session.job_posting}\n</annuncio>` : "",
     `<materiali>\n${sources}\n</materiali>`,
+    examples,
   ]
     .filter(Boolean)
     .join("\n\n");
@@ -150,7 +159,9 @@ export function testPrompt(ctx: SessionContext): JsonRequest {
       ctx.session.focus_topics.length
         ? `È una prova di ripasso: concentrati su questi argomenti deboli: ${ctx.session.focus_topics.join(", ")}.`
         : "",
-      mix,
+      ctx.materials.some((m) => m.role === "modello")
+        ? `${mix} Se gli esempi di prova indicano un formato diverso (numero di domande, tipi, punteggi), segui gli esempi, restando nei ${duration_min} minuti.`
+        : mix,
       "Le domande aperte indicano quanto scrivere (per esempio 'in 5-8 righe'). Nelle domande a crocette le opzioni sbagliate devono essere plausibili, non ovvie, e tutte di lunghezza simile.",
       "Resta sul materiale: ogni risposta corretta deve essere ricavabile da lì.",
     ]
