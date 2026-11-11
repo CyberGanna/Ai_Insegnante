@@ -165,6 +165,9 @@ function SideNav() {
         tipo={tipo}
         progetto={params.get("progetto")}
         onSessions={onSessions}
+        cartella={
+          isActive(pathname, "/progetti/") ? params.get("cartella") : null
+        }
       />
     </nav>
   );

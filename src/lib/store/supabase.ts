@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Material, Profile, Project, Report, Session, Turn } from "@/lib/types";
+import type { Folder, Material, Profile, Project, Report, Session, Turn } from "@/lib/types";
 import { scoreMaxFor } from "@/lib/types";
 import { kindForFile } from "./local";
 import type { DataStore } from "./types";
@@ -43,6 +43,14 @@ const toSession = (r: Row): Session => ({
 const toProject = (r: Row): Project => ({
   id: r.id as string,
   mode: r.mode as Project["mode"],
+  name: r.name as string,
+  folderId: (r.folder_id as string) ?? null,
+  createdAt: r.created_at as string,
+});
+
+const toFolder = (r: Row): Folder => ({
+  id: r.id as string,
+  mode: r.mode as Folder["mode"],
   name: r.name as string,
   createdAt: r.created_at as string,
 });
@@ -176,14 +184,34 @@ export function createSupabaseStore(supabase: SupabaseClient, userId: string): D
       return res.data ?? null;
     },
 
+    async listFolders() {
+      return (check(await supabase.from("folders").select("*").order("name")) as Row[]).map(toFolder);
+    },
+    async createFolder(mode, name) {
+      const row = check(
+        await supabase.from("folders").insert({ user_id: userId, mode, name: name.trim() }).select().single(),
+      ) as Row;
+      return toFolder(row);
+    },
+    async renameFolder(id, name) {
+      check(await supabase.from("folders").update({ name: name.trim() }).eq("id", id));
+    },
+    async deleteFolder(id) {
+      check(await supabase.from("folders").delete().eq("id", id));
+    },
+
     async listProjects(mode) {
       let q = supabase.from("projects").select("*").order("name");
       if (mode) q = q.eq("mode", mode);
       return (check(await q) as Row[]).map(toProject);
     },
-    async createProject(mode, name) {
+    async createProject(mode, name, folderId = null) {
       const row = check(
-        await supabase.from("projects").insert({ user_id: userId, mode, name: name.trim() }).select().single(),
+        await supabase
+          .from("projects")
+          .insert({ user_id: userId, mode, name: name.trim(), folder_id: folderId })
+          .select()
+          .single(),
       ) as Row;
       return toProject(row);
     },

@@ -4,7 +4,7 @@ import { useId, useState } from "react";
 import { mutate } from "swr";
 import { useStore } from "@/components/providers";
 import { Button } from "@/components/ui";
-import { keys } from "@/lib/hooks";
+import { keys, useFolders } from "@/lib/hooks";
 import { PROJECT_COPY, type ExamMode, type Project } from "@/lib/types";
 
 const NEW = "__nuovo__";
@@ -28,7 +28,13 @@ export function ProjectPicker({
   const [error, setError] = useState<string | null>(null);
   const selectId = useId();
   const nameId = useId();
+  const { data: folders = [] } = useFolders();
   const own = projects.filter((p) => p.mode === mode);
+  const loose = own.filter((p) => !p.folderId);
+  const groups = folders
+    .filter((f) => f.mode === mode)
+    .map((f) => ({ f, list: own.filter((p) => p.folderId === f.id) }))
+    .filter((g) => g.list.length > 0);
 
   async function create() {
     const clean = name.trim();
@@ -36,7 +42,7 @@ export function ProjectPicker({
       setError(`Scrivi il nome della ${copy.one}.`);
       return;
     }
-    const existing = own.find(
+    const existing = loose.find(
       (p) => p.name.toLowerCase() === clean.toLowerCase(),
     );
     try {
@@ -110,10 +116,19 @@ export function ProjectPicker({
           className="mt-2 h-11 w-full rounded-full bg-white/80 px-4 text-[15px] text-ink ring-1 ring-line focus:ring-2 focus:ring-teal focus:outline-none sm:max-w-sm"
         >
           <option value="">Nessun progetto</option>
-          {own.map((p) => (
+          {loose.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}
             </option>
+          ))}
+          {groups.map(({ f, list }) => (
+            <optgroup key={f.id} label={f.name}>
+              {list.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </optgroup>
           ))}
           <option value={NEW}>+ Nuovo progetto…</option>
         </select>

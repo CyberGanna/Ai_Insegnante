@@ -1,4 +1,4 @@
-import type { ExamMode, Material, MaterialRole, Profile, Project, Report, Session, SessionConfig, Turn } from "@/lib/types";
+import type { ExamMode, Folder, Material, MaterialRole, Profile, Project, Report, Session, SessionConfig, Turn } from "@/lib/types";
 
 export interface NewMaterialFile {
   kind: "file";
@@ -30,8 +30,14 @@ export interface DataStore {
   /** Scarica il file originale (serve per leggerlo in modalità prova). */
   getMaterialFile(material: Material): Promise<Blob | null>;
 
+  listFolders(): Promise<Folder[]>;
+  createFolder(mode: ExamMode, name: string): Promise<Folder>;
+  renameFolder(id: string, name: string): Promise<void>;
+  /** I progetti della cartella tornano nella cartella del loro tipo. */
+  deleteFolder(id: string): Promise<void>;
+
   listProjects(mode?: ExamMode): Promise<Project[]>;
-  createProject(mode: ExamMode, name: string): Promise<Project>;
+  createProject(mode: ExamMode, name: string, folderId?: string | null): Promise<Project>;
   renameProject(id: string, name: string): Promise<void>;
   /** Le prove del progetto restano, senza progetto. */
   deleteProject(id: string): Promise<void>;

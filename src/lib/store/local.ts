@@ -1,4 +1,4 @@
-import type { ExamMode, Material, MaterialKind, Profile, Project, Report, Session, Turn } from "@/lib/types";
+import type { ExamMode, Folder, Material, MaterialKind, Profile, Project, Report, Session, Turn } from "@/lib/types";
 import { scoreMaxFor } from "@/lib/types";
 import type { DataStore, NewMaterial } from "./types";
 
@@ -12,6 +12,7 @@ const KEY = "ai-insegnante:v1";
 interface LocalDb {
   profile: Profile;
   materials: Material[];
+  folders: Folder[];
   projects: Project[];
   sessions: Session[];
   turns: Turn[];
@@ -33,6 +34,7 @@ function emptyDb(): LocalDb {
       defaultDuration: 20,
     },
     materials: [],
+    folders: [],
     projects: [],
     sessions: [],
     turns: [],
@@ -188,13 +190,36 @@ export function createLocalStore(): DataStore {
       return getFile(material.id);
     },
 
+    async listFolders() {
+      return [...read().folders].sort((a, b) => a.name.localeCompare(b.name, "it"));
+    },
+    async createFolder(mode, name) {
+      const folder: Folder = { id: uid(), mode, name: name.trim(), createdAt: new Date().toISOString() };
+      write((db) => {
+        db.folders.push(folder);
+      });
+      return folder;
+    },
+    async renameFolder(id, name) {
+      write((db) => {
+        db.folders = db.folders.map((f) => (f.id === id ? { ...f, name: name.trim() } : f));
+      });
+    },
+    async deleteFolder(id) {
+      write((db) => {
+        db.folders = db.folders.filter((f) => f.id !== id);
+        db.projects = db.projects.map((p) => (p.folderId === id ? { ...p, folderId: null } : p));
+      });
+    },
+
     async listProjects(mode?: ExamMode) {
       return read()
         .projects.filter((p) => !mode || p.mode === mode)
+        .map((p) => ({ ...p, folderId: p.folderId ?? null }))
         .sort((a, b) => a.name.localeCompare(b.name, "it"));
     },
-    async createProject(mode, name) {
-      const project: Project = { id: uid(), mode, name: name.trim(), createdAt: new Date().toISOString() };
+    async createProject(mode, name, folderId = null) {
+      const project: Project = { id: uid(), mode, name: name.trim(), folderId, createdAt: new Date().toISOString() };
       write((db) => {
         db.projects.push(project);
       });

@@ -156,7 +156,7 @@ const FORMAT_HINT: Record<ExamFormat, Record<ExamMode, string>> = {
   },
 };
 
-function Segmented<T extends string | number>({
+export function Segmented<T extends string | number>({
   legend,
   options,
   value,

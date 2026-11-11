@@ -9,7 +9,7 @@ import { ProgressChart } from "@/components/progress-chart";
 import { useStore } from "@/components/providers";
 import { SessionRow } from "@/components/session-row";
 import { Button, ButtonLink, Card, cn, formatScore } from "@/components/ui";
-import { keys, useProjects, useSessions } from "@/lib/hooks";
+import { keys, useFolders, useProjects, useSessions } from "@/lib/hooks";
 import {
   PROJECT_COPY,
   type ExamFormat,
@@ -130,7 +130,7 @@ export function Sessions() {
       {mode ? (
         <Projects
           mode={mode}
-          projects={projects.filter((p) => p.mode === mode)}
+          projects={projects.filter((p) => p.mode === mode && !p.folderId)}
           sessions={sessions ?? []}
         />
       ) : null}
@@ -239,6 +239,7 @@ export function Projects({
   title = "Progetti",
   action,
   bare = false,
+  folderId = null,
 }: {
   mode: ExamMode;
   projects: Project[];
@@ -247,6 +248,8 @@ export function Projects({
   action?: React.ReactNode;
   /** Solo la griglia, senza titolo né spiegazione. */
   bare?: boolean;
+  /** Cartella dell’utente in cui creare i nuovi progetti. */
+  folderId?: string | null;
 }) {
   const store = useStore();
   const router = useRouter();
@@ -268,7 +271,7 @@ export function Projects({
       return;
     }
     try {
-      const p = await store.createProject(mode, clean);
+      const p = await store.createProject(mode, clean, folderId);
       await mutate(keys.projects);
       setName("");
       setCreating(false);
@@ -394,9 +397,15 @@ function ProjectView({
   const [name, setName] = useState(project.name);
   const inputId = useId();
 
+  const { data: folders = [] } = useFolders();
+  const folder = project.folderId
+    ? folders.find((f) => f.id === project.folderId)
+    : undefined;
   const own = sessions.filter((s) => s.projectId === project.id);
   const list = own.filter((s) => !formato || s.format === formato);
-  const back = sessionsHref(project.mode, null);
+  const back = folder
+    ? `/progetti/?cartella=${folder.id}`
+    : sessionsHref(project.mode, null);
 
   async function rename(e: React.FormEvent) {
     e.preventDefault();
@@ -425,7 +434,7 @@ function ProjectView({
         className="-ml-3 inline-flex h-10 items-center gap-2 rounded-full px-3 text-[15px] text-ink-soft hover:bg-white/30 hover:text-ink"
       >
         <IconArrowLeft size={18} />
-        {copy.section}
+        {folder?.name ?? copy.section}
       </Link>
 
       <header className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">

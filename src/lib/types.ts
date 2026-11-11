@@ -32,6 +32,19 @@ export interface Project {
   id: string;
   mode: ExamMode;
   name: string;
+  /** Cartella creata dall’utente; null = la cartella del tipo (Verifiche, Maturità, Colloqui). */
+  folderId: string | null;
+  createdAt: string;
+}
+
+/**
+ * Cartella aggiunta dall’utente accanto alle tre fisse, con il nome che vuole
+ * (es. "Patente", "Concorso"). Il tipo dice come interroga l’AI.
+ */
+export interface Folder {
+  id: string;
+  mode: ExamMode;
+  name: string;
   createdAt: string;
 }
 
