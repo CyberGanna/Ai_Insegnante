@@ -39,6 +39,12 @@ const MODES: Record<ExamMode, { intro: string; empty: string }> = {
 const isMode = (v: string | null): v is ExamMode =>
   v === "interrogazione" || v === "maturita" || v === "colloquio";
 
+/* Filtri: un solo stile chiaro; quello attivo è bianco pieno con il testo verde acqua. */
+const CHIP_ON =
+  "bg-white font-medium text-teal shadow-[var(--shadow-card)] ring-1 ring-white";
+const CHIP_OFF =
+  "bg-white/45 text-ink-soft ring-1 ring-white/70 hover:bg-white/70 hover:text-ink";
+
 const FILTERS: { value: ExamMode | null; label: string }[] = [
   { value: null, label: "Tutte" },
   { value: "interrogazione", label: "Verifiche" },
@@ -111,9 +117,7 @@ export function Sessions() {
               aria-current={active ? "page" : undefined}
               className={cn(
                 "inline-flex h-9 items-center rounded-full px-4 text-sm transition-colors",
-                active
-                  ? "bg-ink font-medium text-white"
-                  : "glass-bubble text-ink-soft hover:text-ink",
+                active ? CHIP_ON : CHIP_OFF,
               )}
             >
               {f.label}
@@ -176,10 +180,8 @@ function FormatFilter({
             href={href(v)}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "inline-flex h-9 items-center rounded-full px-3.5 text-sm transition-colors",
-              active
-                ? "bg-white/80 font-medium text-ink shadow-[var(--shadow-card)]"
-                : "text-ink-soft hover:text-ink",
+              "inline-flex h-9 items-center rounded-full px-4 text-sm transition-colors",
+              active ? CHIP_ON : CHIP_OFF,
             )}
           >
             {label}

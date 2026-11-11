@@ -176,7 +176,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </a>
 
       {/* Barra laterale (desktop e tablet): vetro scuro sospeso */}
-      <aside className="glass-dark sticky top-3 m-3 hidden h-[calc(100dvh-1.5rem)] flex-col overflow-y-auto rounded-[22px] px-3 py-5 md:flex">
+      <aside className="glass-dark sticky top-3 m-3 hidden h-[calc(100dvh-1.5rem)] flex-col overflow-x-hidden overflow-y-auto overscroll-contain rounded-[22px] [scrollbar-width:thin] [scrollbar-color:rgb(255_255_255/0.25)_transparent] px-3 py-5 md:flex">
         <Logo className="px-2" light />
         <Suspense fallback={null}>
           <SideNav />
