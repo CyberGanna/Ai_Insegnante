@@ -36,24 +36,43 @@ function audio(): AudioContext | null {
   return ctx;
 }
 
-/** Una nota morbida: sinusoide con attacco breve e coda che sfuma. */
+/**
+ * Una nota morbida: sinusoide con un filo di armonica, filtrata in basso,
+ * attacco lento e coda lunga che sfuma. Niente spigoli acuti.
+ */
 function note(
   ac: AudioContext,
   freq: number,
   start: number,
   length: number,
   volume: number,
+  attack = 0.02,
 ) {
-  const osc = ac.createOscillator();
-  const gain = ac.createGain();
-  osc.type = "sine";
-  osc.frequency.setValueAtTime(freq, start);
-  gain.gain.setValueAtTime(0, start);
-  gain.gain.linearRampToValueAtTime(volume, start + 0.008);
-  gain.gain.exponentialRampToValueAtTime(0.0001, start + length);
-  osc.connect(gain).connect(ac.destination);
-  osc.start(start);
-  osc.stop(start + length + 0.02);
+  const out = ac.createGain();
+  out.gain.setValueAtTime(0, start);
+  out.gain.linearRampToValueAtTime(volume, start + attack);
+  out.gain.exponentialRampToValueAtTime(0.0001, start + length);
+
+  const filter = ac.createBiquadFilter();
+  filter.type = "lowpass";
+  filter.frequency.setValueAtTime(Math.min(freq * 2.5, 1800), start);
+  filter.Q.value = 0.5;
+  filter.connect(out).connect(ac.destination);
+
+  // Fondamentale più un’ottava sopra molto leggera: suono caldo, da campanella di legno.
+  for (const [mult, level] of [
+    [1, 1],
+    [2, 0.12],
+  ] as const) {
+    const osc = ac.createOscillator();
+    const g = ac.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(freq * mult, start);
+    g.gain.value = level;
+    osc.connect(g).connect(filter);
+    osc.start(start);
+    osc.stop(start + length + 0.05);
+  }
 }
 
 /*
@@ -86,22 +105,23 @@ function iosAudible(ms: number) {
 
 export function playSound(kind: SoundKind) {
   if (!soundsOn()) return;
-  if (typeof navigator !== "undefined") iosAudible(kind === "tap" ? 300 : 1200);
+  if (typeof navigator !== "undefined") iosAudible(kind === "tap" ? 400 : 2000);
   const ac = audio();
   if (!ac) return;
   const t = ac.currentTime + 0.005;
   if (kind === "tap") {
-    // "Tic" corto, come una goccia.
-    note(ac, 1320, t, 0.06, 0.05);
+    // Tocco ovattato e basso, quasi una goccia su legno.
+    note(ac, 440, t, 0.16, 0.06, 0.012);
   } else if (kind === "start") {
-    // Due note che salgono: si comincia.
-    note(ac, 660, t, 0.25, 0.08);
-    note(ac, 990, t + 0.11, 0.35, 0.08);
+    // Due note calme che salgono (sol, do): si comincia.
+    note(ac, 392, t, 0.7, 0.07, 0.03);
+    note(ac, 523.25, t + 0.16, 0.9, 0.07, 0.03);
   } else {
-    // Accordo arpeggiato: il voto è pronto.
-    note(ac, 784, t, 0.4, 0.07);
-    note(ac, 988, t + 0.09, 0.45, 0.07);
-    note(ac, 1319, t + 0.18, 0.6, 0.07);
+    // Accordo di fa maggiore arpeggiato piano, con coda lunga: il voto è pronto.
+    note(ac, 349.23, t, 1.4, 0.055, 0.04);
+    note(ac, 440, t + 0.12, 1.3, 0.055, 0.04);
+    note(ac, 523.25, t + 0.24, 1.3, 0.055, 0.04);
+    note(ac, 698.46, t + 0.36, 1.5, 0.045, 0.04);
   }
 }
 
