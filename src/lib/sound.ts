@@ -56,8 +56,37 @@ function note(
   osc.stop(start + length + 0.02);
 }
 
+/*
+ * Su iPhone Safari tratta Web Audio come suono "di ambiente": con il
+ * telefono in silenzioso non si sente. Per la durata dell’effetto chiediamo una
+ * sessione audio "transient" (suoni brevi, abbassa un attimo la musica invece
+ * di fermarla), poi torniamo ad "auto" così il microfono dell’esame non cambia.
+ */
+type AudioSession = { type: string };
+let restore: ReturnType<typeof setTimeout> | null = null;
+
+function iosAudible(ms: number) {
+  const session = (navigator as Navigator & { audioSession?: AudioSession })
+    .audioSession;
+  if (!session || session.type === "play-and-record") return;
+  try {
+    session.type = "transient";
+  } catch {
+    return;
+  }
+  if (restore) clearTimeout(restore);
+  restore = setTimeout(() => {
+    try {
+      if (session.type === "transient") session.type = "auto";
+    } catch {
+      // Niente da ripristinare.
+    }
+  }, ms);
+}
+
 export function playSound(kind: SoundKind) {
   if (!soundsOn()) return;
+  if (typeof navigator !== "undefined") iosAudible(kind === "tap" ? 300 : 1200);
   const ac = audio();
   if (!ac) return;
   const t = ac.currentTime + 0.005;
@@ -86,7 +115,22 @@ export function installTapSounds(): () => void {
     if (!el || el.matches(":disabled, [aria-disabled='true']")) return;
     playSound("tap");
   };
+  // iPhone sblocca l’audio solo a fine tocco (touchend/click), non a pointerdown.
+  const unlock = () => {
+    if (!soundsOn()) return;
+    const ac = audio();
+    if (!ac) return;
+    const src = ac.createBufferSource();
+    src.buffer = ac.createBuffer(1, 1, 22050);
+    src.connect(ac.destination);
+    src.start(0);
+  };
   document.addEventListener("pointerdown", onDown, { capture: true });
-  return () =>
+  document.addEventListener("touchend", unlock, { capture: true });
+  document.addEventListener("click", unlock, { capture: true });
+  return () => {
     document.removeEventListener("pointerdown", onDown, { capture: true });
+    document.removeEventListener("touchend", unlock, { capture: true });
+    document.removeEventListener("click", unlock, { capture: true });
+  };
 }
