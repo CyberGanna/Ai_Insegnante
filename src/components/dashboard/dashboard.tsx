@@ -274,7 +274,9 @@ export function Dashboard() {
         </section>
 
         <section aria-labelledby="impostazioni-prova" className="mt-12">
-          <SectionTitle id="impostazioni-prova">Impostazioni insegnante</SectionTitle>
+          <SectionTitle id="impostazioni-prova">
+            Impostazioni insegnante
+          </SectionTitle>
           <Card className="p-5 sm:p-6">
             <ExamSettings
               format={format}

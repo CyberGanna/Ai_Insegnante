@@ -2,7 +2,14 @@
 
 import { useId, useRef, useState } from "react";
 import { useStore } from "@/components/providers";
-import { IconLink, IconUpload } from "@/components/icons";
+import {
+  IconCamera,
+  IconLink,
+  IconMic,
+  IconUpload,
+  IconVideo,
+} from "@/components/icons";
+import { CaptureDialog, type CaptureMode } from "./capture-dialog";
 import { Button, cn } from "@/components/ui";
 import {
   ACCEPT,
@@ -17,6 +24,15 @@ export function DropZone() {
   const [dragging, setDragging] = useState(false);
   const [url, setUrl] = useState("");
   const [message, setMessage] = useState<string | null>(null);
+  const [capture, setCapture] = useState<CaptureMode | null>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
+
+  // Sul telefono la foto usa la fotocamera di sistema (migliore per le pagine); sul computer la webcam.
+  function takePhoto() {
+    if (window.matchMedia("(pointer: coarse)").matches)
+      cameraRef.current?.click();
+    else setCapture("foto");
+  }
   const urlId = useId();
   const hintId = useId();
 
@@ -168,6 +184,41 @@ export function DropZone() {
             </Button>
           </form>
         </div>
+
+        <div
+          className="mt-4 flex flex-wrap items-center justify-center gap-x-1 gap-y-2"
+          role="group"
+          aria-label="Crea subito"
+        >
+          <span className="w-full text-[13px] text-ink-faint sm:mr-1 sm:w-auto">
+            Oppure crea adesso:
+          </span>
+          <Button variant="ghost" size="sm" onClick={takePhoto}>
+            <IconCamera size={17} />
+            Scatta foto
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setCapture("video")}>
+            <IconVideo size={17} />
+            Registra video
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setCapture("audio")}>
+            <IconMic size={17} />
+            Registra audio
+          </Button>
+          <input
+            ref={cameraRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="sr-only"
+            tabIndex={-1}
+            aria-hidden="true"
+            onChange={(e) => {
+              if (e.target.files?.length) void addFiles(e.target.files);
+              e.target.value = "";
+            }}
+          />
+        </div>
       </div>
       <p
         aria-live="polite"
@@ -175,6 +226,13 @@ export function DropZone() {
       >
         {message}
       </p>
+      {capture ? (
+        <CaptureDialog
+          mode={capture}
+          onClose={() => setCapture(null)}
+          onFile={(file) => void addFiles([file])}
+        />
+      ) : null}
     </div>
   );
 }
