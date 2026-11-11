@@ -238,12 +238,15 @@ export function Projects({
   sessions,
   title = "Progetti",
   action,
+  bare = false,
 }: {
   mode: ExamMode;
   projects: Project[];
   sessions: Session[];
   title?: string;
   action?: React.ReactNode;
+  /** Solo la griglia, senza titolo né spiegazione. */
+  bare?: boolean;
 }) {
   const store = useStore();
   const router = useRouter();
@@ -278,13 +281,19 @@ export function Projects({
   }
 
   return (
-    <section aria-labelledby={`progetti-${mode}`} className="mt-8">
-      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h2 id={`progetti-${mode}`} className="text-[1.375rem] font-medium">
-          {title}
-        </h2>
-        {action ?? <p className="text-sm text-ink-soft">{copy.hint}</p>}
-      </div>
+    <section
+      aria-labelledby={bare ? undefined : `progetti-${mode}`}
+      aria-label={bare ? title : undefined}
+      className={bare ? "mt-6" : "mt-8"}
+    >
+      {bare ? null : (
+        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+          <h2 id={`progetti-${mode}`} className="text-[1.375rem] font-medium">
+            {title}
+          </h2>
+          {action ?? <p className="text-sm text-ink-soft">{copy.hint}</p>}
+        </div>
+      )}
       <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {projects.map((p) => {
           const own = sessions.filter((s) => s.projectId === p.id);
