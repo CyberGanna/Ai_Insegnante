@@ -140,12 +140,23 @@ function SideNav() {
     <nav aria-label="Principale" className="mt-8 space-y-6">
       <ul className="space-y-1">
         <li>
-          <SideLink
+          {/* Come il "+" del telefono: avvia una nuova interrogazione o verifica. */}
+          <Link
             href="/"
-            label="Oggi"
-            icon={IconHome}
-            active={pathname === "/"}
-          />
+            aria-current={pathname === "/" ? "page" : undefined}
+            className={cn(
+              "mb-2 flex h-12 items-center gap-3 rounded-2xl bg-gradient-to-b from-[#33c2b1] to-[#0f766e] pr-4 pl-1.5 text-[15px] font-semibold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.45),0_10px_24px_-10px_rgb(45_212_191/0.8)] transition-[filter] hover:brightness-110",
+              pathname === "/" && "ring-2 ring-white/60",
+            )}
+          >
+            <span
+              className="grid size-9 place-items-center rounded-xl bg-white/20 text-2xl leading-none font-normal"
+              aria-hidden="true"
+            >
+              +
+            </span>
+            Nuova prova
+          </Link>
         </li>
         {NAV.map(({ href, label, icon }) => (
           <li key={href}>
