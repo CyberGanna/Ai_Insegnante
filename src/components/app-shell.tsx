@@ -4,11 +4,9 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect } from "react";
 import { useAuth } from "./providers";
+import { SideModes } from "./side-modes";
 import {
   IconBooks,
-  IconBriefcase,
-  IconChat,
-  IconLaurel,
   IconHome,
   IconProgress,
   IconSessions,
@@ -64,12 +62,6 @@ const NAV = [
   { href: "/progressi/", label: "Progressi", icon: IconProgress },
   { href: "/impostazioni/", label: "Impostazioni", icon: IconSettings },
 ];
-
-const MODE_NAV = [
-  { mode: "interrogazione", label: "Verifiche", icon: IconChat },
-  { mode: "maturita", label: "Esami di maturità", icon: IconLaurel },
-  { mode: "colloquio", label: "Colloqui", icon: IconBriefcase },
-] as const;
 
 const isActive = (pathname: string, href: string) =>
   href === "/"
@@ -130,7 +122,8 @@ function SideLink({
 /** La voce attiva dipende anche da ?tipo=, quindi serve useSearchParams (dentro Suspense). */
 function SideNav() {
   const pathname = usePathname();
-  const tipo = useSearchParams().get("tipo");
+  const params = useSearchParams();
+  const tipo = params.get("tipo");
   const onSessions = isActive(pathname, "/sessioni/");
   return (
     <nav aria-label="Principale" className="mt-8 space-y-6">
@@ -158,23 +151,11 @@ function SideNav() {
           </li>
         ))}
       </ul>
-      <div>
-        <p className="px-3 text-[11px] font-medium tracking-[0.08em] text-white/50 uppercase">
-          Le tue prove
-        </p>
-        <ul className="mt-2 space-y-1">
-          {MODE_NAV.map(({ mode, label, icon }) => (
-            <li key={mode}>
-              <SideLink
-                href={`/sessioni/?tipo=${mode}`}
-                label={label}
-                icon={icon}
-                active={onSessions && tipo === mode}
-              />
-            </li>
-          ))}
-        </ul>
-      </div>
+      <SideModes
+        tipo={tipo}
+        progetto={params.get("progetto")}
+        onSessions={onSessions}
+      />
     </nav>
   );
 }
@@ -186,7 +167,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   if (auth.status !== "ready") return <Loading />;
 
   return (
-    <div className="min-h-dvh md:grid md:grid-cols-[16rem_1fr]">
+    <div className="min-h-dvh md:grid md:grid-cols-[17.5rem_1fr]">
       <a
         href="#contenuto"
         className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-full focus:bg-card focus:px-4 focus:py-2 focus:shadow-[var(--shadow-lift)]"
