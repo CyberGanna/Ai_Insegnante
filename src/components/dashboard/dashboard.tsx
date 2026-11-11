@@ -222,7 +222,7 @@ export function Dashboard() {
         <section
           ref={materialsRef}
           aria-labelledby="materiali"
-          className="mt-10 scroll-mt-20"
+          className="glass-bubble p-4 sm:p-6 mt-8 scroll-mt-20"
         >
           <SectionTitle
             id="materiali"
@@ -259,7 +259,10 @@ export function Dashboard() {
           ) : null}
         </section>
 
-        <section aria-labelledby="modalita" className="mt-12">
+        <section
+          aria-labelledby="modalita"
+          className="glass-bubble p-4 sm:p-6 mt-5"
+        >
           <SectionTitle id="modalita">Che prova vuoi fare</SectionTitle>
           <ModePicker
             value={mode}
@@ -273,11 +276,14 @@ export function Dashboard() {
           />
         </section>
 
-        <section aria-labelledby="impostazioni-prova" className="mt-12">
+        <section
+          aria-labelledby="impostazioni-prova"
+          className="glass-bubble p-4 sm:p-6 mt-5"
+        >
           <SectionTitle id="impostazioni-prova">
             Impostazioni insegnante
           </SectionTitle>
-          <Card className="p-5 sm:p-6">
+          <div>
             <ExamSettings
               format={format}
               mode={mode}
@@ -296,7 +302,7 @@ export function Dashboard() {
               excluded={excluded}
               onToggle={toggle}
             />
-          </Card>
+          </div>
           {getAi().isDemo ? (
             <p className="mt-3 text-[13px] leading-relaxed text-ink-faint">
               Modalità prova: domande, correzione e voto sono simulati. Collega

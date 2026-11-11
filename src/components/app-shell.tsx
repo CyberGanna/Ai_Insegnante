@@ -1,11 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect } from "react";
 import { useAuth } from "./providers";
 import {
   IconBooks,
+  IconBriefcase,
+  IconChat,
+  IconLaurel,
   IconHome,
   IconProgress,
   IconSessions,
@@ -13,7 +16,13 @@ import {
 } from "./icons";
 import { cn } from "./ui";
 
-export function Logo({ className }: { className?: string }) {
+export function Logo({
+  className,
+  light,
+}: {
+  className?: string;
+  light?: boolean;
+}) {
   return (
     <Link
       href="/"
@@ -37,7 +46,12 @@ export function Logo({ className }: { className?: string }) {
           strokeLinecap="round"
         />
       </svg>
-      <span className="font-serif text-[1.2rem] leading-none font-semibold tracking-[-0.01em] text-ink">
+      <span
+        className={cn(
+          "font-serif text-[1.2rem] leading-none font-semibold tracking-[-0.01em]",
+          light ? "text-white" : "text-ink",
+        )}
+      >
         Ai Insegnante
       </span>
     </Link>
@@ -50,6 +64,12 @@ const NAV = [
   { href: "/progressi/", label: "Progressi", icon: IconProgress },
   { href: "/impostazioni/", label: "Impostazioni", icon: IconSettings },
 ];
+
+const MODE_NAV = [
+  { mode: "interrogazione", label: "Verifiche", icon: IconChat },
+  { mode: "maturita", label: "Esami di maturità", icon: IconLaurel },
+  { mode: "colloquio", label: "Colloqui", icon: IconBriefcase },
+] as const;
 
 const isActive = (pathname: string, href: string) =>
   href === "/"
@@ -79,6 +99,86 @@ export function FocusShell({ children }: { children: React.ReactNode }) {
   return auth.status === "ready" ? <>{children}</> : <Loading />;
 }
 
+function SideLink({
+  href,
+  label,
+  icon: Icon,
+  active,
+}: {
+  href: string;
+  label: string;
+  icon: typeof IconHome;
+  active: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      aria-current={active ? "page" : undefined}
+      className={cn(
+        "flex h-10 items-center gap-3 rounded-xl px-3 text-[15px] transition-colors",
+        active
+          ? "bg-gradient-to-b from-[#33c2b1] to-[#12877e] font-medium text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.45),0_8px_20px_-8px_rgb(45_212_191/0.7)]"
+          : "text-white/75 hover:bg-white/10 hover:text-white",
+      )}
+    >
+      <Icon />
+      {label}
+    </Link>
+  );
+}
+
+/** La voce attiva dipende anche da ?tipo=, quindi serve useSearchParams (dentro Suspense). */
+function SideNav() {
+  const pathname = usePathname();
+  const tipo = useSearchParams().get("tipo");
+  const onSessions = isActive(pathname, "/sessioni/");
+  return (
+    <nav aria-label="Principale" className="mt-8 space-y-6">
+      <ul className="space-y-1">
+        <li>
+          <SideLink
+            href="/"
+            label="Oggi"
+            icon={IconHome}
+            active={pathname === "/"}
+          />
+        </li>
+        {NAV.map(({ href, label, icon }) => (
+          <li key={href}>
+            <SideLink
+              href={href}
+              label={label}
+              icon={icon}
+              active={
+                href === "/sessioni/"
+                  ? onSessions && !tipo
+                  : isActive(pathname, href)
+              }
+            />
+          </li>
+        ))}
+      </ul>
+      <div>
+        <p className="px-3 text-[11px] font-medium tracking-[0.08em] text-white/50 uppercase">
+          Le tue prove
+        </p>
+        <ul className="mt-2 space-y-1">
+          {MODE_NAV.map(({ mode, label, icon }) => (
+            <li key={mode}>
+              <SideLink
+                href={`/sessioni/?tipo=${mode}`}
+                label={label}
+                icon={icon}
+                active={onSessions && tipo === mode}
+              />
+            </li>
+          ))}
+        </ul>
+      </div>
+    </nav>
+  );
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const auth = useRequireAuth();
   const pathname = usePathname();
@@ -86,7 +186,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   if (auth.status !== "ready") return <Loading />;
 
   return (
-    <div className="min-h-dvh md:grid md:grid-cols-[15rem_1fr]">
+    <div className="min-h-dvh md:grid md:grid-cols-[16rem_1fr]">
       <a
         href="#contenuto"
         className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-full focus:bg-card focus:px-4 focus:py-2 focus:shadow-[var(--shadow-lift)]"
@@ -94,34 +194,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         Vai al contenuto
       </a>
 
-      {/* Barra laterale (desktop e tablet) */}
-      <aside className="sticky top-0 hidden h-dvh flex-col border-r border-line/80 px-4 py-6 md:flex">
-        <Logo className="px-2" />
-        <nav aria-label="Principale" className="mt-10">
-          <ul className="space-y-1">
-            {NAV.map(({ href, label, icon: Icon }) => {
-              const active = isActive(pathname, href);
-              return (
-                <li key={href}>
-                  <Link
-                    href={href}
-                    aria-current={active ? "page" : undefined}
-                    className={cn(
-                      "flex h-10 items-center gap-3 rounded-lg px-3 text-[15px] transition-colors",
-                      active
-                        ? "bg-card font-medium text-ink shadow-[var(--shadow-card)]"
-                        : "text-ink-soft hover:bg-paper-deep hover:text-ink",
-                    )}
-                  >
-                    <Icon className={active ? "text-teal" : undefined} />
-                    {label}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
-        <p className="mt-auto px-3 text-xs leading-relaxed text-ink-faint">
+      {/* Barra laterale (desktop e tablet): vetro scuro sospeso */}
+      <aside className="glass-dark sticky top-3 m-3 hidden h-[calc(100dvh-1.5rem)] flex-col overflow-y-auto rounded-[22px] px-3 py-5 md:flex">
+        <Logo className="px-2" light />
+        <Suspense fallback={null}>
+          <SideNav />
+        </Suspense>
+        <p className="mt-auto px-3 pt-6 text-xs leading-relaxed text-white/60">
           {auth.store.kind === "local"
             ? "Modalità prova: i dati restano in questo browser."
             : auth.email}
@@ -129,13 +208,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Intestazione (telefono) */}
-      <header className="sticky top-0 z-30 flex h-14 items-center border-b border-line/80 bg-paper/90 px-4 pt-[env(safe-area-inset-top)] backdrop-blur md:hidden">
-        <Logo />
+      <header className="glass-bar sticky top-0 z-30 flex h-14 items-center border-b px-4 pt-[env(safe-area-inset-top)] md:hidden">
+        <Logo light />
       </header>
 
       <main
         id="contenuto"
-        className="min-w-0 pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0"
+        className="glass-sheet m-2 min-h-[calc(100dvh-1rem)] min-w-0 rounded-[24px] pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:my-3 md:mr-3 md:ml-0 md:min-h-[calc(100dvh-1.5rem)] md:pb-0"
       >
         {children}
       </main>
@@ -143,7 +222,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Barra in basso (telefono) */}
       <nav
         aria-label="Principale"
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-paper/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+        className="glass-bar fixed inset-x-0 bottom-0 z-30 border-t pb-[env(safe-area-inset-bottom)] md:hidden"
       >
         <ul className="grid grid-cols-5">
           {[{ href: "/", label: "Oggi", icon: IconHome }, ...NAV].map(
@@ -157,7 +236,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     aria-current={active ? "page" : undefined}
                     className={cn(
                       "flex h-16 flex-col items-center justify-center gap-1 text-[11px] leading-none",
-                      active ? "font-medium text-teal" : "text-ink-soft",
+                      active ? "font-medium text-[#5eead4]" : "text-white/70",
                     )}
                   >
                     <Icon size={22} />

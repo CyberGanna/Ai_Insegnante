@@ -10,7 +10,7 @@ const base =
   "inline-flex items-center justify-center gap-2 rounded-full font-medium transition-[background-color,color,box-shadow,transform] duration-150 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] touch-manipulation";
 const variants: Record<Variant, string> = {
   primary:
-    "bg-teal text-white shadow-[0_1px_0_rgb(255_255_255/0.15)_inset,0_6px_16px_-8px_rgb(15_118_110/0.7)] hover:bg-teal-deep",
+    "bg-teal bg-gradient-to-b from-[#1a9a8f] to-teal text-white shadow-[0_1px_0_rgb(255_255_255/0.35)_inset,0_8px_20px_-10px_rgb(15_118_110/0.9)] hover:from-teal hover:to-teal-deep",
   secondary: "bg-card text-ink ring-1 ring-line hover:ring-ink-faint/50",
   ghost: "text-teal hover:bg-teal-soft",
 };

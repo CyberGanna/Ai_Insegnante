@@ -333,7 +333,7 @@ export function ExamScreen() {
   const canAnswer = phase === "waiting" || phase === "speaking";
 
   return (
-    <div className="flex min-h-dvh flex-col bg-paper pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
+    <div className="glass-sheet glass-sheet-fixed flex min-h-dvh flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
       {/* Barra in alto: esci, tipo di prova, tempo */}
       <header className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-4 py-4 sm:px-6">
         {phase === "intro" || phase === "loading" || phase === "error" ? (

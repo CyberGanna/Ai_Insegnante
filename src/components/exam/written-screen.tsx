@@ -248,7 +248,7 @@ export function WrittenScreen() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-paper">
+    <div className="glass-sheet glass-sheet-fixed flex min-h-dvh flex-col">
       <header className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-line/70 bg-paper/95 px-4 py-3 backdrop-blur sm:px-6 print:hidden">
         <Link
           href="/"

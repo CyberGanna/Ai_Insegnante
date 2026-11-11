@@ -43,7 +43,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="grid min-h-dvh place-items-center px-4 py-10">
+    <main className="glass-sheet glass-sheet-fixed grid min-h-dvh place-items-center px-4 py-10">
       <div className="w-full max-w-[25rem]">
         <Logo className="mb-10" />
         <h1 className="text-[2rem] leading-tight font-medium">Allenati all’orale, ad alta voce</h1>
