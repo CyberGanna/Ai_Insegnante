@@ -177,6 +177,18 @@ export function SideModes({
           },
         )}
       </ul>
+      <Link
+        href="/progetti/?nuova=1"
+        className="mt-1 flex h-10 items-center gap-3 rounded-xl px-3 text-[15px] text-[#5eead4] transition-colors hover:bg-white/10"
+      >
+        <span
+          className="grid w-5 place-items-center text-lg leading-none"
+          aria-hidden="true"
+        >
+          +
+        </span>
+        Nuova cartella
+      </Link>
     </div>
   );
 }

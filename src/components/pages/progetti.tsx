@@ -102,7 +102,11 @@ export function ProjectsPage() {
           />
         ))}
         <li>
-          <NewFolder existing={folders.map((f) => f.name)} />
+          <NewFolder
+            key={params.get("nuova") ?? ""}
+            startOpen={params.get("nuova") === "1"}
+            existing={folders.map((f) => f.name)}
+          />
         </li>
       </ul>
     </PageFrame>
@@ -155,10 +159,17 @@ function FolderCard({
 }
 
 /** Crea una cartella con il nome che si vuole e sceglie come interroga l’AI. */
-function NewFolder({ existing }: { existing: string[] }) {
+function NewFolder({
+  existing,
+  startOpen = false,
+}: {
+  existing: string[];
+  /** Aperto da "Nuova cartella" nella barra laterale (?nuova=1). */
+  startOpen?: boolean;
+}) {
   const store = useStore();
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(startOpen);
   const [name, setName] = useState("");
   const [mode, setMode] = useState<ExamMode>("interrogazione");
   const [error, setError] = useState<string | null>(null);

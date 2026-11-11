@@ -58,6 +58,7 @@ export function Logo({
 }
 
 const NAV = [
+  { href: "/progetti/", label: "Progetti", icon: IconFolder },
   { href: "/sessioni/", label: "Le mie sessioni", icon: IconSessions },
   { href: "/materiali/", label: "Materiali", icon: IconBooks },
   { href: "/progressi/", label: "Progressi", icon: IconProgress },
@@ -155,7 +156,9 @@ function SideNav() {
               active={
                 href === "/sessioni/"
                   ? onSessions && !tipo
-                  : isActive(pathname, href)
+                  : href === "/progetti/"
+                    ? isActive(pathname, href) && !params.get("cartella")
+                    : isActive(pathname, href)
               }
             />
           </li>
