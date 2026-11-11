@@ -256,12 +256,12 @@ export function ExamSettings({
     <div className="grid gap-x-6 gap-y-5 sm:grid-cols-2">
       {onFormat && format && mode ? (
         <Segmented<ExamFormat>
-          legend="Come rispondi"
+          legend="Formato"
           value={format}
           onChange={onFormat}
           options={[
-            { value: "orale", label: "A voce" },
-            { value: "scritto", label: "Per iscritto" },
+            { value: "orale", label: "Orale" },
+            { value: "scritto", label: "Scritto" },
           ]}
           aside={
             <p className="mt-2 text-sm leading-relaxed text-ink-soft">
