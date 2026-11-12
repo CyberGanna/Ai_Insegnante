@@ -1,7 +1,41 @@
-// Trascrizione e voce: STT_PROVIDER=openai, TTS_PROVIDER=elevenlabs|openai.
+// Trascrizione e voce: STT_PROVIDER=openai|gemini, TTS_PROVIDER=elevenlabs|openai.
+
+// Gemini ascolta l'audio direttamente: trascrizione gratuita (con limiti) senza OpenAI.
+async function transcribeWithGemini(audio: File): Promise<string> {
+  const bytes = new Uint8Array(await audio.arrayBuffer());
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  const model = Deno.env.get("GEMINI_MODEL") ?? "gemini-flash-latest";
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+    {
+      method: "POST",
+      headers: { "x-goog-api-key": Deno.env.get("GEMINI_API_KEY") ?? "", "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { inline_data: { mime_type: (audio.type || "audio/webm").split(";")[0], data: btoa(binary) } },
+              {
+                text: "Trascrivi parola per parola questo audio in italiano. Rispondi solo con la trascrizione, senza commenti.",
+              },
+            ],
+          },
+        ],
+      }),
+    },
+  );
+  if (res.status === 429) throw new Error("Limite gratuito di Gemini raggiunto: riprova tra poco.");
+  if (!res.ok) throw new Error(`Trascrizione ${res.status}: ${await res.text()}`);
+  const data = await res.json();
+  return (data.candidates?.[0]?.content?.parts ?? []).map((p: { text?: string }) => p.text ?? "").join("").trim();
+}
 
 export async function transcribe(audio: File): Promise<string> {
-  const provider = Deno.env.get("STT_PROVIDER") ?? "openai";
+  const provider =
+    Deno.env.get("STT_PROVIDER") ?? (Deno.env.get("LLM_PROVIDER") === "gemini" ? "gemini" : "openai");
+  if (provider === "gemini") return transcribeWithGemini(audio);
   if (provider !== "openai") throw new Error(`STT_PROVIDER non supportato: ${provider}`);
   const form = new FormData();
   form.append("file", audio, audio.name || "risposta.webm");

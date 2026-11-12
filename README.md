@@ -39,13 +39,15 @@ Importa il repository su Vercel (preset Next.js, nessuna modifica ai comandi) e 
 
 ### Fornitori AI (scelti con i segreti delle funzioni)
 
-| Parte | Variabile | Predefinito | Alternativa |
+| Parte | Variabile | Gratis | Qualità massima |
 |---|---|---|---|
-| Cervello (domande, voto, lettura PDF e foto) | `LLM_PROVIDER` | `anthropic` (Claude Sonnet 5.5) | `openai` |
-| Trascrizione (risposte a voce, audio e video caricati) | `STT_PROVIDER` | `openai` (gpt-4o-mini-transcribe) | |
-| Voce | `TTS_PROVIDER` | `elevenlabs` (voce calma e severa) | `openai` (per partire basta questo: niente account ElevenLabs) |
+| Cervello (domande, voto, lettura PDF e foto) | `LLM_PROVIDER` | `gemini` (versione gratuita di Google, con limiti giornalieri) | `anthropic` (Claude Sonnet 5.5) |
+| Trascrizione (risposte a voce, audio e video caricati) | `STT_PROVIDER` | `gemini` (automatico con `LLM_PROVIDER=gemini`) | `openai` (gpt-4o-mini-transcribe) |
+| Voce | `TTS_PROVIDER` | voce del browser: `NEXT_PUBLIC_AI_TTS=browser` nel sito | `elevenlabs` o `openai` |
 
-Audio e video: il servizio di trascrizione accetta file fino a 25 MB e ha un limite di durata per file; per lezioni lunghe conviene caricare solo l'audio o dividerlo in parti. I video .mov dell'iPhone vanno esportati in MP4.
+Con `LLM_PROVIDER=compatibile` si usa qualunque servizio con API in stile OpenAI, per esempio OpenRouter per Qwen, DeepSeek o Llama (`LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`). Per leggere foto e PDF serve un modello che vede le immagini (per Qwen le versioni "VL"). Nelle versioni gratuite il fornitore può conservare i testi inviati: meglio non caricare dati personali.
+
+Audio e video: il servizio di trascrizione accetta file fino a 25 MB (con Gemini circa 15 MB, perché il file viaggia dentro la richiesta) e ha un limite di durata per file; per lezioni lunghe conviene caricare solo l'audio o dividerlo in parti. I video .mov dell'iPhone vanno esportati in MP4.
 
 Per aggiungere un fornitore basta implementare l'interfaccia in `supabase/functions/_shared/llm.ts` o `speech.ts`.
 
