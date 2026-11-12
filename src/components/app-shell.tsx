@@ -215,14 +215,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </p>
       </aside>
 
-      {/* Intestazione (telefono) */}
-      <header className="glass-bar sticky top-0 z-30 flex h-14 items-center border-b px-4 pt-[env(safe-area-inset-top)] md:hidden">
-        <Logo light />
-      </header>
-
       <main
         id="contenuto"
-        className="glass-sheet m-2 min-h-[calc(100dvh-1rem)] min-w-0 rounded-[24px] pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:my-3 md:mr-3 md:ml-0 md:min-h-[calc(100dvh-1.5rem)] md:pb-0"
+        className="glass-sheet m-2 mt-[calc(0.5rem+env(safe-area-inset-top))] min-h-[calc(100dvh-1rem)] min-w-0 rounded-[24px] pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:my-3 md:mr-3 md:ml-0 md:min-h-[calc(100dvh-1.5rem)] md:pb-0"
       >
         {children}
       </main>
