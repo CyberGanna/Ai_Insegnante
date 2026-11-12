@@ -219,7 +219,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         id="contenuto"
         className="glass-sheet m-2 mt-[calc(0.5rem+env(safe-area-inset-top))] min-h-[calc(100dvh-1rem)] min-w-0 rounded-[24px] pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:my-3 md:mr-3 md:ml-0 md:min-h-[calc(100dvh-1.5rem)] md:pb-0"
       >
-        {children}
+        <Suspense fallback={children}>
+          <PageEnter>{children}</PageEnter>
+        </Suspense>
       </main>
 
       {/* Barra in basso (telefono) */}
@@ -275,6 +277,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </ul>
       </nav>
+    </div>
+  );
+}
+
+/** Rimonta il contenuto a ogni cambio di pagina o di ?tipo=, ?progetto=…, così parte la dissolvenza. */
+function PageEnter({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const search = useSearchParams().toString();
+  return (
+    <div key={`${pathname}?${search}`} className="page-enter">
+      {children}
     </div>
   );
 }
