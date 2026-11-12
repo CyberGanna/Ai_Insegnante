@@ -29,13 +29,21 @@ Senza variabili d'ambiente l'app parte in **modalità prova**: materiali e sessi
 4. Pubblica le funzioni: `supabase functions deploy esaminatore trascrivi voce`.
 5. In Authentication, URL configuration, aggiungi l'indirizzo dell'app tra i redirect consentiti (link magico e Google).
 
+### Pubblicazione automatica (GitHub Actions)
+
+`.github/workflows/supabase.yml` applica le migrazioni e pubblica le funzioni a ogni modifica in `supabase/` sul ramo `main` (o a mano da Actions > Supabase > Run workflow). Servono tre segreti GitHub: `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD`. Le chiavi AI si inseriscono solo nel pannello Supabase (Edge Functions > Secrets), mai nel codice o in GitHub.
+
+### Sito online (Vercel)
+
+Importa il repository su Vercel (preset Next.js, nessuna modifica ai comandi) e aggiungi le variabili `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Poi metti l'indirizzo del sito in Supabase, Authentication > URL configuration (Site URL e Redirect URLs).
+
 ### Fornitori AI (scelti con i segreti delle funzioni)
 
 | Parte | Variabile | Predefinito | Alternativa |
 |---|---|---|---|
 | Cervello (domande, voto, lettura PDF e foto) | `LLM_PROVIDER` | `anthropic` (Claude Sonnet 5.5) | `openai` |
 | Trascrizione (risposte a voce, audio e video caricati) | `STT_PROVIDER` | `openai` (gpt-4o-mini-transcribe) | |
-| Voce | `TTS_PROVIDER` | `elevenlabs` (voce calma e severa) | `openai` |
+| Voce | `TTS_PROVIDER` | `elevenlabs` (voce calma e severa) | `openai` (per partire basta questo: niente account ElevenLabs) |
 
 Audio e video: il servizio di trascrizione accetta file fino a 25 MB e ha un limite di durata per file; per lezioni lunghe conviene caricare solo l'audio o dividerlo in parti. I video .mov dell'iPhone vanno esportati in MP4.
 
