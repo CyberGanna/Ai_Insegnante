@@ -141,6 +141,8 @@ export function Dashboard() {
 
   async function start() {
     setError(null);
+    // Dentro il clic: sblocca l'audio, così l'esaminatore potrà parlare appena pronto.
+    getAi().tts.unlock();
     if (mode === "colloquio" && jobPosting.trim().length < 40) {
       setError({
         text: "Incolla l’annuncio di lavoro: servono almeno un paio di righe per preparare le domande.",
@@ -196,58 +198,29 @@ export function Dashboard() {
     }
   }
 
-  const startButton = (
-    <Button
-      size="lg"
-      onClick={start}
-      disabled={starting}
-      aria-describedby={error ? "start-error" : undefined}
-    >
-      {starting ? "Preparo la simulazione…" : "Nuova simulazione"}
-    </Button>
-  );
-
   return (
     <div className="mx-auto grid max-w-[1180px] gap-10 px-4 pt-8 pb-28 sm:px-6 md:pb-12 lg:px-10 lg:pt-12 xl:grid-cols-[minmax(0,1fr)_19rem] xl:gap-12">
       <div className="min-w-0">
-        <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-[2rem] leading-[1.1] font-medium text-ink sm:text-[2.5rem]">
-              {name
-                ? `Ciao ${name}, cosa prepariamo oggi?`
-                : "Ciao, cosa prepariamo oggi?"}
-            </h1>
-            {profile && !name ? (
-              <p className="mt-2 text-sm text-ink-soft">
-                <Link
-                  href="/impostazioni/"
-                  className="font-medium text-teal underline-offset-2 hover:underline"
-                >
-                  Aggiungi il tuo nome
-                </Link>{" "}
-                e l’esaminatore ti chiamerà per nome.
-              </p>
-            ) : null}
-          </div>
-          <div className="hidden shrink-0 md:block">{startButton}</div>
-        </header>
-
-        <p
-          id="start-error"
-          role="alert"
-          className={
-            error
-              ? "mt-4 rounded-[10px] bg-[#fdecea] px-4 py-3 text-sm text-danger"
-              : "sr-only"
-          }
-        >
-          {error?.text}
-        </p>
+        <h1 className="sr-only">Nuova simulazione</h1>
+        {profile && !name ? (
+          <p className="text-sm text-ink-soft">
+            <Link
+              href="/impostazioni/"
+              className="font-medium text-teal underline underline-offset-2"
+            >
+              Aggiungi il tuo nome
+            </Link>{" "}
+            e l’esaminatore ti chiamerà per nome.
+          </p>
+        ) : null}
 
         <section
           ref={materialsRef}
           aria-labelledby="materiali"
-          className="glass-bubble p-4 sm:p-6 mt-8 scroll-mt-20"
+          className={
+            "glass-bubble scroll-mt-20 p-4 sm:p-6 " +
+            (profile && !name ? "mt-4" : "")
+          }
         >
           <SectionTitle
             id="materiali"
@@ -345,12 +318,33 @@ export function Dashboard() {
             </p>
           ) : null}
         </section>
+
+        {/* Il pulsante sta in fondo: si compila tutto, poi si parte. */}
+        <div className="mt-6">
+          <p
+            id="start-error"
+            role="alert"
+            className={
+              error
+                ? "mb-3 rounded-[10px] bg-[#fdecea] px-4 py-3 text-sm text-danger"
+                : "sr-only"
+            }
+          >
+            {error?.text}
+          </p>
+          <Button
+            size="lg"
+            onClick={start}
+            disabled={starting}
+            aria-describedby={error ? "start-error" : undefined}
+            className="w-full"
+          >
+            {starting ? "Preparo la simulazione…" : "Inizia simulazione"}
+          </Button>
+        </div>
       </div>
 
-      <aside
-        className="min-w-0 space-y-6 xl:pt-[4.5rem]"
-        aria-label="I tuoi risultati"
-      >
+      <aside className="min-w-0 space-y-6 " aria-label="I tuoi risultati">
         <Card className="p-5">
           <div className="mb-2 flex items-baseline justify-between">
             <h2 className="text-lg font-medium">Ultime sessioni</h2>
@@ -380,11 +374,6 @@ export function Dashboard() {
           <ProgressChart sessions={sessions} />
         </Card>
       </aside>
-
-      {/* Sul telefono il pulsante principale resta a portata di pollice. */}
-      <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-20 border-t border-line/70 bg-paper/95 px-4 pt-3 pb-6 backdrop-blur md:hidden">
-        <div className="[&>button]:w-full">{startButton}</div>
-      </div>
     </div>
   );
 }

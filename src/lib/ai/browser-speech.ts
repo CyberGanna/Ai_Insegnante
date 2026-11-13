@@ -89,33 +89,92 @@ export function createBrowserStt(): SpeechToText {
   };
 }
 
-function pickItalianVoice(): SpeechSynthesisVoice | null {
-  const voices = window.speechSynthesis.getVoices().filter((v) => v.lang.toLowerCase().startsWith("it"));
-  return voices.find((v) => /google|alice|federica|elsa/i.test(v.name)) ?? voices[0] ?? null;
+/* Le voci "Natural", "Online", "Premium" o "Enhanced" sono neurali e suonano molto meno robotiche:
+   Edge ha Elsa, Isabella, Giuseppe e Diego; Safari ha Alice, Federica e Luca in qualità migliorata. */
+const MALE = /giuseppe|diego|luca|cosimo|benigno|gianni|paolo|roberto|male|uomo/i;
+const FEMALE = /elsa|isabella|alice|federica|emma|paola|elena|fiamma|carla|female|donna/i;
+
+function score(v: SpeechSynthesisVoice, voice: Voice): number {
+  let s = 0;
+  if (/natural|neural|online/i.test(v.name)) s += 100;
+  if (/premium/i.test(v.name)) s += 90;
+  if (/enhanced|siri/i.test(v.name)) s += 70;
+  if (/google/i.test(v.name)) s += 50;
+  if (!v.localService) s += 10;
+  if (v.lang.toLowerCase() === "it-it") s += 5;
+  if (voice === "severa" ? MALE.test(v.name) : FEMALE.test(v.name)) s += 8;
+  return s;
+}
+
+function italianVoices(): SpeechSynthesisVoice[] {
+  return window.speechSynthesis.getVoices().filter((v) => v.lang.toLowerCase().startsWith("it"));
+}
+
+/* Su Chrome l’elenco delle voci arriva qualche istante dopo il caricamento. */
+function loadVoices(): Promise<SpeechSynthesisVoice[]> {
+  const now = italianVoices();
+  if (now.length) return Promise.resolve(now);
+  return new Promise((resolve) => {
+    const done = () => resolve(italianVoices());
+    window.speechSynthesis.addEventListener("voiceschanged", done, {
+      once: true,
+    });
+    setTimeout(done, 1200);
+  });
+}
+
+function pickItalianVoice(voices: SpeechSynthesisVoice[], voice: Voice): SpeechSynthesisVoice | null {
+  return [...voices].sort((a, b) => score(b, voice) - score(a, voice))[0] ?? null;
+}
+
+/* Frasi brevi: le pause tra una frase e l’altra sono più naturali e Chrome non tronca i testi lunghi. */
+function sentences(text: string): string[] {
+  const parts = text.match(/[^.!?;:]+[.!?;:]*\s*/g) ?? [text];
+  const out: string[] = [];
+  for (const p of parts) {
+    const last = out.at(-1);
+    if (last && last.length < 60) out[out.length - 1] = last + p;
+    else out.push(p);
+  }
+  return out.map((x) => x.trim()).filter(Boolean);
 }
 
 export function createBrowserTts(): TextToSpeech {
   const supported = typeof window !== "undefined" && "speechSynthesis" in window;
+  let generation = 0;
   return {
     supported,
-    speak(text: string, voice: Voice) {
-      if (!supported) return Promise.resolve();
-      return new Promise<void>((resolve) => {
-        const synth = window.speechSynthesis;
-        synth.cancel();
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = "it-IT";
-        const v = pickItalianVoice();
-        if (v) u.voice = v;
-        u.rate = voice === "severa" ? 1.02 : 0.94;
-        u.pitch = voice === "severa" ? 0.85 : 1.02;
-        u.onend = () => resolve();
-        u.onerror = () => resolve();
-        synth.speak(u);
-      });
+    async speak(text: string, voice: Voice) {
+      if (!supported) return;
+      const synth = window.speechSynthesis;
+      synth.cancel();
+      const mine = ++generation;
+      const v = pickItalianVoice(await loadVoices(), voice);
+      const natural = v ? score(v, voice) >= 50 : false;
+      for (const chunk of sentences(text)) {
+        if (mine !== generation) return;
+        await new Promise<void>((resolve) => {
+          const u = new SpeechSynthesisUtterance(chunk);
+          u.lang = "it-IT";
+          if (v) u.voice = v;
+          // Le voci neurali vanno lasciate al loro ritmo; quelle base rallentano un poco.
+          u.rate = natural ? 1 : voice === "severa" ? 1 : 0.95;
+          u.pitch = 1;
+          u.onend = () => resolve();
+          u.onerror = () => resolve();
+          synth.speak(u);
+        });
+      }
     },
     stop() {
+      generation++;
       if (supported) window.speechSynthesis.cancel();
+    },
+    unlock() {
+      if (!supported) return;
+      const u = new SpeechSynthesisUtterance(" ");
+      u.volume = 0;
+      window.speechSynthesis.speak(u);
     },
   };
 }

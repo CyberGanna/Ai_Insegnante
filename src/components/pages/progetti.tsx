@@ -142,7 +142,7 @@ function FolderCard({
         href={href}
         className="glass-bubble flex h-full items-center gap-4 p-5 transition-shadow hover:shadow-[var(--shadow-lift)] sm:flex-col sm:items-start sm:p-6"
       >
-        <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-b from-[#33c2b1] to-[#0f766e] text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.45)]">
+        <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-b from-[#3a3a3a] to-black text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.25)]">
           <Icon size={24} />
         </span>
         <span className="min-w-0 flex-1">

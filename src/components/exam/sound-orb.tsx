@@ -137,7 +137,7 @@ export function SoundOrb({
             <stop offset="0" stopColor="#ffffff" stopOpacity="0.95" />
             <stop
               offset="1"
-              stopColor={listening ? "#fbefdc" : "#e2efed"}
+              stopColor={listening ? "#e9e9e9" : "#f1f1f1"}
               stopOpacity="1"
             />
           </radialGradient>

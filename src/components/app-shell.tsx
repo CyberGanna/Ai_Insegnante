@@ -37,10 +37,15 @@ export function Logo({
         aria-hidden="true"
         className="shrink-0"
       >
-        <circle cx="16" cy="16" r="15" fill="var(--color-teal)" />
+        <circle
+          cx="16"
+          cy="16"
+          r="15"
+          fill={light ? "#ffffff" : "var(--color-teal)"}
+        />
         <path
           d="M9 16h1.6M12.4 12.5v7M15.8 9.5v13M19.2 12v8M22.6 14.5v3"
-          stroke="#F7F5F0"
+          stroke={light ? "#111111" : "#ffffff"}
           strokeWidth="2"
           strokeLinecap="round"
         />
@@ -120,7 +125,7 @@ function SideLink({
       className={cn(
         "flex h-10 items-center gap-3 rounded-xl px-3 text-[15px] transition-colors",
         active
-          ? "bg-gradient-to-b from-[#33c2b1] to-[#12877e] font-medium text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.45),0_8px_20px_-8px_rgb(45_212_191/0.7)]"
+          ? "bg-white font-medium text-black shadow-[0_8px_20px_-10px_rgb(0_0_0/0.6)]"
           : "text-white/75 hover:bg-white/10 hover:text-white",
       )}
     >
@@ -145,7 +150,7 @@ function SideNav() {
             href="/"
             aria-current={pathname === "/" ? "page" : undefined}
             className={cn(
-              "mb-2 flex h-12 items-center gap-3 rounded-2xl bg-gradient-to-b from-[#33c2b1] to-[#0f766e] pr-4 pl-1.5 text-[15px] font-semibold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.45),0_10px_24px_-10px_rgb(45_212_191/0.8)] transition-[filter] hover:brightness-110",
+              "mb-2 flex h-12 items-center gap-3 rounded-2xl bg-white pr-4 pl-1.5 text-[15px] font-semibold text-black shadow-[0_10px_24px_-10px_rgb(0_0_0/0.6)] transition-colors hover:bg-white/90",
               pathname === "/" && "ring-2 ring-white/60",
             )}
           >
@@ -240,8 +245,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     aria-label="Nuova prova"
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "-mt-5 grid size-14 place-items-center rounded-full bg-gradient-to-b from-[#33c2b1] to-[#0f766e] text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.45),0_10px_24px_-8px_rgb(45_212_191/0.8)] ring-4 ring-[#0a2633]/60 transition-transform active:scale-95",
-                      active && "ring-[#5eead4]/40",
+                      "-mt-5 grid size-14 place-items-center rounded-full bg-white text-black shadow-[0_10px_24px_-8px_rgb(0_0_0/0.7)] ring-4 ring-black/60 transition-transform active:scale-95",
+                      active && "ring-white/30",
                     )}
                   >
                     <svg
@@ -266,7 +271,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   aria-current={active ? "page" : undefined}
                   className={cn(
                     "flex h-16 flex-col items-center justify-center gap-1 text-[11px] leading-none",
-                    active ? "font-medium text-[#5eead4]" : "text-white/70",
+                    active ? "font-medium text-white" : "text-white/70",
                   )}
                 >
                   <Icon size={22} />

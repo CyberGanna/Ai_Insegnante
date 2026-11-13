@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { playSound } from "@/lib/sound";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { mutate } from "swr";
@@ -19,10 +18,13 @@ import type { ExamContext, Listening } from "@/lib/ai/types";
 import { saveEvaluation } from "@/lib/exam";
 import { keys } from "@/lib/hooks";
 import { modeLabel, type Material, type Session, type Turn } from "@/lib/types";
+import { Preparing } from "./preparing";
 import { SoundOrb, type OrbState } from "./sound-orb";
 
 type Phase =
   | "loading"
+  | "preparing"
+  | "ready"
   | "intro"
   | "thinking"
   | "speaking"
@@ -70,6 +72,7 @@ export function ExamScreen() {
   );
   const [questionNumber, setQuestionNumber] = useState(0);
   const [typing, setTyping] = useState(false);
+  const [autoStart, setAutoStart] = useState(false);
   const [draft, setDraft] = useState("");
   const [stream, setStream] = useState<MediaStream | null>(null);
 
@@ -137,7 +140,9 @@ export function ExamScreen() {
         setCurrent(last);
         setQuestionNumber(countQuestions(last));
       }
-      setPhase("intro");
+      // Prova nuova: prima l'esaminatore studia i materiali, poi si parte.
+      if (turns.length === 0) void prepare(s);
+      else setPhase("intro");
     })().catch((e) => {
       setPhase("error");
       setError({
@@ -148,10 +153,19 @@ export function ExamScreen() {
     return () => {
       cancelled = true;
     };
+    // prepare va lanciata solo al caricamento.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, store, router]);
 
-  // Cronometro: parte dopo "Inizia" e si ferma mentre si prepara il report.
-  const running = !["loading", "intro", "finishing", "error"].includes(phase);
+  // Cronometro: parte con la conversazione e si ferma mentre si prepara il report.
+  const running = ![
+    "loading",
+    "preparing",
+    "ready",
+    "intro",
+    "finishing",
+    "error",
+  ].includes(phase);
   useEffect(() => {
     if (!running || !session) return;
     const t = setInterval(() => {
@@ -194,13 +208,66 @@ export function ExamScreen() {
       await saveEvaluation(store, s, turnsRef.current, evaluation);
       sessionStorage.removeItem(`esame:${s.id}:tempo`);
       await mutate(keys.sessions);
-      router.replace(`/report/?id=${s.id}&fine=1`);
+      router.replace(`/report/?id=${s.id}`);
     } catch (e) {
       setPhase("error");
       setError({
         text:
           e instanceof Error ? e.message : "Non riesco a preparare il report.",
         retry: () => void finish(s),
+      });
+    }
+  }
+
+  /* Studio dei materiali: l'AI legge tutto e scrive la prima domanda a cronometro fermo.
+     Se la pagina ha già ricevuto un clic (si arriva da "Inizia simulazione") la
+     conversazione parte da sola; altrimenti il browser vuole un tocco per l'audio. */
+  async function prepare(s: Session) {
+    setPhase("preparing");
+    setError(null);
+    try {
+      const [next] = await Promise.all([
+        ai.examiner.nextQuestion(ctx(s)),
+        new Promise((r) => setTimeout(r, 2500)),
+      ]);
+      const turn = await store.addTurn({
+        sessionId: s.id,
+        index: 0,
+        question: next.question,
+        topic: next.topic,
+        isFollowUp: next.isFollowUp,
+        kind: "aperta",
+        options: null,
+        answer: null,
+        modelAnswer: null,
+        feedback: null,
+        askedAt: new Date().toISOString(),
+      });
+      turnsRef.current = [turn];
+      setCurrent(turn);
+      setQuestionNumber(1);
+      if (!ai.stt.supported) setTyping(true);
+      const activated =
+        typeof navigator !== "undefined" &&
+        (
+          navigator as Navigator & {
+            userActivation?: { hasBeenActive: boolean };
+          }
+        ).userActivation?.hasBeenActive;
+      setAutoStart(Boolean(activated));
+      setPhase("ready");
+      if (activated) {
+        await new Promise((r) => setTimeout(r, 1200));
+        void speak(s, turn.question);
+      }
+    } catch (e) {
+      setPhase("error");
+      setError({
+        text:
+          e instanceof Error
+            ? e.message
+            : "L’esaminatore non riesce a studiare i materiali.",
+        retry: () => void prepare(s),
       });
     }
   }
@@ -297,7 +364,7 @@ export function ExamScreen() {
 
   function begin() {
     if (!session) return;
-    playSound("start");
+    ai.tts.unlock();
     if (!ai.stt.supported) setTyping(true);
     if (current) void speak(session, current.question);
     else void ask(session);
@@ -338,7 +405,11 @@ export function ExamScreen() {
     <div className="glass-sheet glass-sheet-fixed flex min-h-dvh flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
       {/* Barra in alto: esci, tipo di prova, tempo */}
       <header className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-4 py-4 sm:px-6">
-        {phase === "intro" || phase === "loading" || phase === "error" ? (
+        {phase === "intro" ||
+        phase === "loading" ||
+        phase === "preparing" ||
+        phase === "ready" ||
+        phase === "error" ? (
           <Link
             href="/"
             className="inline-flex h-10 items-center gap-2 rounded-full px-3 text-[15px] text-ink-soft hover:bg-paper-deep hover:text-ink"
@@ -381,6 +452,19 @@ export function ExamScreen() {
           <p className="my-auto text-ink-soft" aria-busy="true">
             Preparo l’aula…
           </p>
+        ) : (phase === "preparing" || phase === "ready") && session ? (
+          <div className="my-auto flex w-full flex-col items-center">
+            <Preparing
+              title={session.title}
+              materials={materialsRef.current.map((m) => m.name)}
+              done={phase === "ready"}
+            />
+            {phase === "ready" && !autoStart ? (
+              <Button size="lg" className="min-w-48" onClick={begin} autoFocus>
+                Inizia
+              </Button>
+            ) : null}
+          </div>
         ) : phase === "intro" && session ? (
           <div className="my-auto max-w-md">
             <SoundOrb state="idle" stream={null} />
@@ -520,8 +604,8 @@ export function ExamScreen() {
                     className={cn(
                       "group flex h-[4.5rem] min-w-[12rem] items-center justify-center gap-3 rounded-full px-8 text-lg font-medium text-white transition-[background-color,transform,box-shadow] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40 touch-manipulation",
                       phase === "listening"
-                        ? "bg-amber-deep shadow-[0_10px_30px_-12px_rgb(217_119_6/0.8)]"
-                        : "bg-teal shadow-[0_10px_30px_-12px_rgb(15_118_110/0.8)] hover:bg-teal-deep",
+                        ? "bg-amber-deep shadow-[0_10px_30px_-12px_rgb(0_0_0/0.6)]"
+                        : "bg-teal shadow-[0_10px_30px_-12px_rgb(0_0_0/0.6)] hover:bg-teal-deep",
                     )}
                   >
                     {phase === "listening" ? (

@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { playSound } from "@/lib/sound";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import useSWR, { mutate } from "swr";
 import { useStore } from "@/components/providers";
 import { IconArrowLeft, IconCheck } from "@/components/icons";
@@ -15,7 +14,6 @@ export function ReportScreen() {
   const params = useSearchParams();
   const id = params.get("id") ?? "";
   /** Arrivati qui appena finita la prova: suona il voto. */
-  const justFinished = params.get("fine") === "1";
   const store = useStore();
   const router = useRouter();
   const { data, isLoading, error } = useSWR(
@@ -30,10 +28,6 @@ export function ReportScreen() {
     },
   );
   const [retrying, setRetrying] = useState(false);
-  const ready = Boolean(data?.report);
-  useEffect(() => {
-    if (ready && justFinished) playSound("done");
-  }, [ready, justFinished]);
 
   if (isLoading)
     return (

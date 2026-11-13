@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { installTapSounds } from "@/lib/sound";
 import { SWRConfig } from "swr";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase/client";
 import { createLocalStore } from "@/lib/store/local";
@@ -46,8 +45,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
     });
     return () => data.subscription.unsubscribe();
   }, []);
-
-  useEffect(() => installTapSounds(), []);
 
   const swr = useMemo(
     () => ({ revalidateOnFocus: false, shouldRetryOnError: false }),

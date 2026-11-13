@@ -26,15 +26,22 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#F7F5F0",
+  themeColor: "#0a0a0a",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="it" className={`${fraunces.variable} ${inter.variable} h-full antialiased`}>
+    <html
+      lang="it"
+      className={`${fraunces.variable} ${inter.variable} h-full antialiased`}
+    >
       <body className="min-h-full">
         <Providers>{children}</Providers>
       </body>

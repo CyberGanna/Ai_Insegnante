@@ -1,4 +1,4 @@
-// Legge un testo con la voce dell'esaminatore e restituisce audio/mpeg.
+// Legge un testo con la voce dell'esaminatore e restituisce l'audio (mp3 o wav).
 import { cors, HttpError, serve, userClient } from "../_shared/http.ts";
 import { speak, type Voice } from "../_shared/speech.ts";
 
@@ -11,5 +11,5 @@ serve(async (req) => {
     console.error("TTS", res.status, await res.text());
     throw new Error("Voce non disponibile.");
   }
-  return new Response(res.body, { headers: { ...cors, "Content-Type": "audio/mpeg", "Cache-Control": "no-store" } });
+  return new Response(res.body, { headers: { ...cors, "Content-Type": res.headers.get("Content-Type") ?? "audio/mpeg", "Cache-Control": "no-store" } });
 });

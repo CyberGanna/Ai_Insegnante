@@ -1,4 +1,4 @@
-// Trascrizione e voce: STT_PROVIDER=openai|gemini, TTS_PROVIDER=elevenlabs|openai.
+// Trascrizione e voce: STT_PROVIDER=openai|gemini, TTS_PROVIDER=elevenlabs|openai|gemini.
 
 // Gemini ascolta l'audio direttamente: trascrizione gratuita (con limiti) senza OpenAI.
 async function transcribeWithGemini(audio: File): Promise<string> {
@@ -53,8 +53,73 @@ export async function transcribe(audio: File): Promise<string> {
 
 export type Voice = "calma" | "severa";
 
+// Gemini restituisce PCM 16 bit mono a 24 kHz: lo avvolgiamo in un WAV che il browser sa suonare.
+function pcmToWav(pcm: Uint8Array, rate = 24000): Uint8Array<ArrayBuffer> {
+  const out = new Uint8Array(new ArrayBuffer(44 + pcm.length));
+  const v = new DataView(out.buffer);
+  const tag = (o: number, t: string) => [...t].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+  tag(0, "RIFF");
+  v.setUint32(4, 36 + pcm.length, true);
+  tag(8, "WAVE");
+  tag(12, "fmt ");
+  v.setUint32(16, 16, true);
+  v.setUint16(20, 1, true);
+  v.setUint16(22, 1, true);
+  v.setUint32(24, rate, true);
+  v.setUint32(28, rate * 2, true);
+  v.setUint16(32, 2, true);
+  v.setUint16(34, 16, true);
+  tag(36, "data");
+  v.setUint32(40, pcm.length, true);
+  out.set(pcm, 44);
+  return out;
+}
+
+// Voce di Gemini: molto più naturale di quella del browser, con la stessa chiave gratuita (limiti bassi).
+async function speakWithGemini(text: string, voice: Voice): Promise<Response> {
+  const model = Deno.env.get("GEMINI_TTS_MODEL") ?? "gemini-2.5-flash-preview-tts";
+  const style =
+    voice === "severa"
+      ? "Leggi in italiano come un professore esigente ma corretto, con tono asciutto e ritmo deciso"
+      : "Leggi in italiano come un insegnante paziente e cordiale, con tono caldo e ritmo naturale";
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+    {
+      method: "POST",
+      headers: { "x-goog-api-key": Deno.env.get("GEMINI_API_KEY") ?? "", "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: `${style}: ${text}` }] }],
+        generationConfig: {
+          responseModalities: ["AUDIO"],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: {
+                voiceName:
+                  voice === "severa"
+                    ? (Deno.env.get("GEMINI_VOICE_SEVERA") ?? "Charon")
+                    : (Deno.env.get("GEMINI_VOICE_CALMA") ?? "Sulafat"),
+              },
+            },
+          },
+        },
+      }),
+    },
+  );
+  if (!res.ok) return res;
+  const data = await res.json();
+  const b64: string | undefined = data.candidates?.[0]?.content?.parts?.find(
+    (p: { inlineData?: { data?: string } }) => p.inlineData?.data,
+  )?.inlineData?.data;
+  if (!b64) return new Response("Gemini non ha restituito audio.", { status: 502 });
+  const pcm = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+  return new Response(pcmToWav(pcm), { headers: { "Content-Type": "audio/wav" } });
+}
+
 export async function speak(text: string, voice: Voice): Promise<Response> {
-  const provider = Deno.env.get("TTS_PROVIDER") ?? "elevenlabs";
+  const provider =
+    Deno.env.get("TTS_PROVIDER") ??
+    (Deno.env.get("ELEVENLABS_API_KEY") ? "elevenlabs" : Deno.env.get("GEMINI_API_KEY") ? "gemini" : "openai");
+  if (provider === "gemini") return speakWithGemini(text, voice);
   if (provider === "elevenlabs") {
     const voiceId =
       voice === "severa" ? Deno.env.get("ELEVENLABS_VOICE_SEVERA") : Deno.env.get("ELEVENLABS_VOICE_CALMA");
