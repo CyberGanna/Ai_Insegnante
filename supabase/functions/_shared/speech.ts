@@ -5,10 +5,16 @@ import { encodeBase64, decodeBase64 } from "jsr:@std/encoding@1/base64";
 // Gemini ascolta l'audio direttamente: trascrizione gratuita (con limiti) senza OpenAI.
 async function transcribeWithGemini(audio: File): Promise<string> {
   const data64 = encodeBase64(await audio.arrayBuffer());
-  const model = Deno.env.get("GEMINI_MODEL") ?? "gemini-flash-latest";
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
-    {
+  const primary = Deno.env.get("GEMINI_MODEL") ?? "gemini-flash-latest";
+  const models = [
+    primary,
+    ...(Deno.env.get("GEMINI_FALLBACK_MODELS") ?? "gemini-2.5-flash,gemini-flash-lite-latest,gemini-2.5-flash-lite")
+      .split(",")
+      .map((m) => m.trim())
+      .filter((m) => m && m !== primary),
+  ];
+  const call = (model: string) =>
+    fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
       method: "POST",
       headers: { "x-goog-api-key": Deno.env.get("GEMINI_API_KEY") ?? "", "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -24,8 +30,14 @@ async function transcribeWithGemini(audio: File): Promise<string> {
           },
         ],
       }),
-    },
-  );
+    });
+  // Modello sovraccarico (503): si prova il successivo.
+  let res!: Response;
+  for (const [i, m] of models.entries()) {
+    res = await call(m);
+    if (![500, 503, 404].includes(res.status) || i === models.length - 1) break;
+    await res.body?.cancel();
+  }
   if (res.status === 429) throw new Error("Limite gratuito di Gemini raggiunto: riprova tra poco.");
   if (!res.ok) throw new Error(`Trascrizione ${res.status}: ${await res.text()}`);
   const data = await res.json();
