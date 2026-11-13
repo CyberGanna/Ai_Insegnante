@@ -146,13 +146,30 @@ function geminiLlm(): Llm {
       let res = await call(fast);
       // Alcuni modelli non accettano il limite al ragionamento: si riprova senza.
       if (fast && res.status === 400) res = await call(false);
+      // Modello sovraccarico (capita spesso sulla versione gratuita): un secondo tentativo.
+      if (res.status === 500 || res.status === 503) {
+        await new Promise((r) => setTimeout(r, 2000));
+        res = await call(false);
+      }
       if (res.status === 429) throw new Error("Limite gratuito di Gemini raggiunto: riprova tra poco.");
-      if (!res.ok) throw new Error(`Gemini ${res.status}: ${await res.text()}`);
+      if (!res.ok) {
+        const raw = await res.text();
+        let reason = raw;
+        try {
+          reason = (JSON.parse(raw) as { error?: { message?: string } }).error?.message ?? raw;
+        } catch {
+          /* testo semplice */
+        }
+        throw new Error(`Gemini ${res.status} (${model}): ${reason}`);
+      }
       const data = await res.json();
       const text = (data.candidates?.[0]?.content?.parts ?? [])
         .map((p: { text?: string }) => p.text ?? "")
         .join("");
-      if (!text) throw new Error("Risposta vuota da Gemini.");
+      if (!text) {
+        const why = data.candidates?.[0]?.finishReason ?? data.promptFeedback?.blockReason ?? "sconosciuto";
+        throw new Error(`Risposta vuota da Gemini (motivo: ${why}).`);
+      }
       return parseLoose<T>(text);
     },
   };
