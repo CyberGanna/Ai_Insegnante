@@ -3,7 +3,9 @@
 //   gemini       Google Gemini (ha una versione gratuita): GEMINI_API_KEY, GEMINI_MODEL.
 //   compatibile  qualunque servizio con API in stile OpenAI (OpenRouter per Qwen,
 //                DeepSeek, Llama…): LLM_BASE_URL, LLM_API_KEY, LLM_MODEL.
-import Anthropic from "npm:@anthropic-ai/sdk@1.5.0";
+// Gli SDK pesanti si caricano solo quando servono: all'avvio la funzione resta leggera
+// e non supera il limite di CPU di Supabase (errore 546).
+import type Anthropic from "npm:@anthropic-ai/sdk@1.5.0";
 
 export type Attachment =
   | { kind: "pdf"; base64: string }
@@ -17,6 +19,8 @@ export interface JsonRequest {
   schema: Record<string, unknown>;
   attachments?: Attachment[];
   maxTokens?: number;
+  /** Risposta breve e veloce (domanda orale): poco ragionamento. */
+  fast?: boolean;
 }
 
 export interface Llm {
@@ -24,10 +28,14 @@ export interface Llm {
 }
 
 function anthropicLlm(): Llm {
-  const client = new Anthropic({ apiKey: Deno.env.get("ANTHROPIC_API_KEY") });
+  let client: Anthropic | null = null;
   const model = Deno.env.get("ANTHROPIC_MODEL") ?? "claude-sonnet-5-5";
   return {
     async json<T>({ system, user, schema, attachments = [], maxTokens = 4000 }: JsonRequest) {
+      if (!client) {
+        const { default: Sdk } = await import("npm:@anthropic-ai/sdk@1.5.0");
+        client = new Sdk({ apiKey: Deno.env.get("ANTHROPIC_API_KEY") });
+      }
       const content: Anthropic.Beta.BetaContentBlockParam[] = [
         ...attachments.map((a): Anthropic.Beta.BetaContentBlockParam =>
           a.kind === "pdf"
@@ -113,14 +121,13 @@ function geminiLlm(): Llm {
   const key = Deno.env.get("GEMINI_API_KEY");
   const model = Deno.env.get("GEMINI_MODEL") ?? "gemini-flash-latest";
   return {
-    async json<T>({ system, user, schema, attachments = [], maxTokens = 4000 }: JsonRequest) {
+    async json<T>({ system, user, schema, attachments = [], maxTokens = 4000, fast = false }: JsonRequest) {
       const parts: unknown[] = attachments.map((a) => ({
         inline_data: { mime_type: a.kind === "pdf" ? "application/pdf" : a.mediaType, data: a.base64 },
       }));
       parts.push({ text: user });
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
-        {
+      const call = (thinking: boolean) =>
+        fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
           method: "POST",
           headers: { "x-goog-api-key": key ?? "", "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -131,10 +138,14 @@ function geminiLlm(): Llm {
               responseJsonSchema: schema,
               // I modelli che "ragionano" consumano parte dei token: lasciamo margine.
               maxOutputTokens: maxTokens * 2,
+              // Per una domanda a voce basta poco ragionamento: risposta in pochi secondi.
+              ...(thinking ? { thinkingConfig: { thinkingBudget: 512 } } : {}),
             },
           }),
-        },
-      );
+        });
+      let res = await call(fast);
+      // Alcuni modelli non accettano il limite al ragionamento: si riprova senza.
+      if (fast && res.status === 400) res = await call(false);
       if (res.status === 429) throw new Error("Limite gratuito di Gemini raggiunto: riprova tra poco.");
       if (!res.ok) throw new Error(`Gemini ${res.status}: ${await res.text()}`);
       const data = await res.json();

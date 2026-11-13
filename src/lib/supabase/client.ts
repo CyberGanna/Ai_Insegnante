@@ -35,17 +35,27 @@ export async function callFunction(
   if (!token) throw new Error("Accedi di nuovo per continuare.");
 
   const isRaw = body instanceof FormData || body instanceof Blob;
-  const res = await fetch(`${url}/functions/v1/${name}`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      apikey: key!,
-      ...(isRaw ? {} : { "Content-Type": "application/json" }),
-    },
-    body: isRaw ? (body as BodyInit) : JSON.stringify(body),
-  });
+  const send = () =>
+    fetch(`${url}/functions/v1/${name}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        apikey: key!,
+        ...(isRaw ? {} : { "Content-Type": "application/json" }),
+      },
+      body: isRaw ? (body as BodyInit) : JSON.stringify(body),
+    });
+  let res = await send();
+  // 546 e 503: la funzione si è avviata male o era sovraccarica. Un secondo tentativo di solito basta.
+  if (res.status === 546 || res.status === 503) {
+    await new Promise((r) => setTimeout(r, 1500));
+    res = await send();
+  }
   if (!res.ok) {
-    let message = `Errore del server (${res.status}).`;
+    let message =
+      res.status === 546
+        ? "Il server dell’esaminatore ha superato i suoi limiti. Riprova tra qualche secondo."
+        : `Errore del server (${res.status}).`;
     try {
       const err = (await res.json()) as { error?: string };
       if (err.error) message = err.error;
