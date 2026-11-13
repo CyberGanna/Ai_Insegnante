@@ -44,7 +44,9 @@ export function serve(handler: (req: Request) => Promise<Response>) {
     } catch (e) {
       if (e instanceof HttpError) return fail(e.message, e.status);
       console.error(e);
-      return fail("Errore del fornitore AI. Riprova tra poco.", 502);
+      // Il motivo vero (senza chiavi: stanno solo negli header) aiuta a capire cosa non va.
+      const detail = e instanceof Error ? e.message.replace(/\s+/g, " ").slice(0, 300) : "";
+      return fail(detail ? `Errore del fornitore AI: ${detail}` : "Errore del fornitore AI. Riprova tra poco.", 502);
     }
   });
 }
