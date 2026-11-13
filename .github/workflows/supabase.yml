@@ -12,7 +12,7 @@ name: Supabase
 on:
   push:
     branches: [main]
-    paths: ["supabase/**"]
+    paths: ["supabase/**", ".github/workflows/supabase.yml"]
   workflow_dispatch:
 
 concurrency:
@@ -34,6 +34,6 @@ jobs:
       - name: Collega il progetto
         run: supabase link --project-ref "$PROJECT_REF"
       - name: Applica le migrazioni del database
-        run: supabase db push
+        run: supabase db push --remote --include-all
       - name: Pubblica le funzioni AI
         run: supabase functions deploy esaminatore trascrivi voce --project-ref "$PROJECT_REF"
