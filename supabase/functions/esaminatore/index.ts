@@ -3,7 +3,7 @@
 //   question  sceglie la prossima domanda della prova orale (nuova o di approfondimento)
 //   test      prepara tutte le domande della prova scritta
 //   evaluate  dà il voto e prepara il report
-import mammoth from "npm:mammoth@1.13.0";
+import { encodeBase64 } from "jsr:@std/encoding@1/base64";
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.119.0";
 import { HttpError, json, serve, userClient } from "../_shared/http.ts";
 import { getLlm, type Attachment } from "../_shared/llm.ts";
@@ -21,7 +21,7 @@ serve(async (req) => {
       return json(await readMaterial(supabase, body.materialId ?? ""));
     case "question": {
       const ctx = await loadSession(supabase, body.sessionId ?? "");
-      return json(await getLlm().json(questionPrompt(ctx, body.elapsedSec ?? 0)));
+      return json(await getLlm().json({ ...questionPrompt(ctx, body.elapsedSec ?? 0), fast: true }));
     }
     case "test": {
       const ctx = await loadSession(supabase, body.sessionId ?? "");
@@ -39,12 +39,8 @@ serve(async (req) => {
 // ---------------------------------------------------------------------------
 // Lettura dei materiali
 
-const toBase64 = (buf: ArrayBuffer) => {
-  const bytes = new Uint8Array(buf);
-  let bin = "";
-  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-  return btoa(bin);
-};
+// Codifica veloce: costruire una stringa carattere per carattere consuma troppa CPU sui file grandi.
+const toBase64 = (buf: ArrayBuffer) => encodeBase64(buf);
 
 /** Blocca indirizzi locali e privati: la funzione non deve diventare un proxy verso la rete interna. */
 function assertPublicUrl(raw: string): URL {
@@ -123,6 +119,8 @@ async function readMaterial(supabase: SupabaseClient, materialId: string) {
       return done(await transcribe(new File([buf], m.name, { type })));
     }
     if (m.kind === "docx") {
+      // Caricata solo per i file Word: è una libreria pesante da avviare.
+      const { default: mammoth } = await import("npm:mammoth@1.13.0");
       const { value } = await mammoth.extractRawText({ arrayBuffer: buf } as never);
       return done(value);
     }

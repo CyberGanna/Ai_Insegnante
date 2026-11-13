@@ -1,10 +1,10 @@
+import { encodeBase64, decodeBase64 } from "jsr:@std/encoding@1/base64";
+
 // Trascrizione e voce: STT_PROVIDER=openai|gemini, TTS_PROVIDER=elevenlabs|openai|gemini.
 
 // Gemini ascolta l'audio direttamente: trascrizione gratuita (con limiti) senza OpenAI.
 async function transcribeWithGemini(audio: File): Promise<string> {
-  const bytes = new Uint8Array(await audio.arrayBuffer());
-  let binary = "";
-  for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  const data64 = encodeBase64(await audio.arrayBuffer());
   const model = Deno.env.get("GEMINI_MODEL") ?? "gemini-flash-latest";
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
@@ -16,7 +16,7 @@ async function transcribeWithGemini(audio: File): Promise<string> {
           {
             role: "user",
             parts: [
-              { inline_data: { mime_type: (audio.type || "audio/webm").split(";")[0], data: btoa(binary) } },
+              { inline_data: { mime_type: (audio.type || "audio/webm").split(";")[0], data: data64 } },
               {
                 text: "Trascrivi parola per parola questo audio in italiano. Rispondi solo con la trascrizione, senza commenti.",
               },
@@ -111,7 +111,7 @@ async function speakWithGemini(text: string, voice: Voice): Promise<Response> {
     (p: { inlineData?: { data?: string } }) => p.inlineData?.data,
   )?.inlineData?.data;
   if (!b64) return new Response("Gemini non ha restituito audio.", { status: 502 });
-  const pcm = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+  const pcm = decodeBase64(b64);
   return new Response(pcmToWav(pcm), { headers: { "Content-Type": "audio/wav" } });
 }
 
