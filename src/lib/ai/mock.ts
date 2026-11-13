@@ -91,7 +91,7 @@ const firstSentence = (body: string) =>
   body.split(/(?<=[.!?])\s+/)[0]?.trim() ?? "";
 
 /** Quante domande per la prova scritta, in base al tempo scelto. */
-const WRITTEN_COUNT: Record<number, number> = { 10: 5, 20: 8, 40: 12 };
+const WRITTEN_COUNT: Record<number, number> = { 5: 3, 10: 5, 20: 8, 40: 12 };
 
 const JOB_WRITTEN: WrittenQuestion[] = [
   {

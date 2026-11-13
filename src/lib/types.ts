@@ -21,7 +21,7 @@ export interface Material {
 export type ExamMode = "interrogazione" | "maturita" | "colloquio";
 export type Difficulty = "base" | "medio" | "esigente";
 export type Voice = "calma" | "severa";
-export type Duration = 10 | 20 | 40;
+export type Duration = 5 | 10 | 20 | 40;
 /** A voce: domanda e risposta una alla volta. Per iscritto: l’AI prepara un compito intero da consegnare. */
 export type ExamFormat = "orale" | "scritto";
 /** aperta = risposta libera, multipla = a crocette, traccia = tema o elaborato lungo. */

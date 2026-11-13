@@ -1,4 +1,5 @@
 import { callFunction } from "@/lib/supabase/client";
+import { createBrowserTts } from "./browser-speech";
 import type { Voice } from "@/lib/types";
 import type {
   Evaluation,
@@ -27,13 +28,22 @@ export function createRemoteExaminer(): Examiner {
       })) as NextQuestion;
     },
     async writtenTest(ctx) {
-      const res = (await callFunction("esaminatore", { action: "test", sessionId: ctx.session.id })) as {
+      const res = (await callFunction("esaminatore", {
+        action: "test",
+        sessionId: ctx.session.id,
+      })) as {
         questions: WrittenQuestion[];
       };
-      return res.questions.map((q) => ({ ...q, options: q.kind === "multipla" ? (q.options ?? []) : null }));
+      return res.questions.map((q) => ({
+        ...q,
+        options: q.kind === "multipla" ? (q.options ?? []) : null,
+      }));
     },
     async evaluate(ctx) {
-      return (await callFunction("esaminatore", { action: "evaluate", sessionId: ctx.session.id })) as Evaluation;
+      return (await callFunction("esaminatore", {
+        action: "evaluate",
+        sessionId: ctx.session.id,
+      })) as Evaluation;
     },
   };
 }
@@ -41,7 +51,10 @@ export function createRemoteExaminer(): Examiner {
 export function createRemoteReader(): MaterialReader {
   return {
     async read(material) {
-      const res = (await callFunction("esaminatore", { action: "read", materialId: material.id })) as { text: string };
+      const res = (await callFunction("esaminatore", {
+        action: "read",
+        materialId: material.id,
+      })) as { text: string };
       return res.text;
     },
   };
@@ -79,11 +92,15 @@ export function createRemoteStt(): SpeechToText {
           recorder.stop();
           await done;
           release();
-          const audio = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
+          const audio = new Blob(chunks, {
+            type: recorder.mimeType || "audio/webm",
+          });
           if (audio.size < 2000) return "";
           const form = new FormData();
           form.append("audio", audio, `risposta.${audio.type.includes("mp4") ? "m4a" : "webm"}`);
-          const res = (await callFunction("trascrivi", form)) as { text: string };
+          const res = (await callFunction("trascrivi", form)) as {
+            text: string;
+          };
           return res.text;
         },
         cancel() {
@@ -95,27 +112,52 @@ export function createRemoteStt(): SpeechToText {
   };
 }
 
+// Un attimo di silenzio: suonato dentro un clic, rende l’elemento audio utilizzabile anche dopo.
+const SILENCE =
+  "data:audio/wav;base64,UklGRrQBAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YZABAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA";
+
 export function createRemoteTts(): TextToSpeech {
-  let current: HTMLAudioElement | null = null;
+  // Un solo elemento per tutta la prova: Safari permette di farlo suonare dopo il primo sblocco.
+  let audio: HTMLAudioElement | null = null;
+  const element = () => (audio ??= new Audio());
+  const fallback = createBrowserTts();
+  let generation = 0;
   return {
     supported: typeof window !== "undefined",
     async speak(text: string, voice: Voice) {
-      const blob = (await callFunction("voce", { text, voice }, "blob")) as Blob;
+      const mine = ++generation;
+      let blob: Blob;
+      try {
+        blob = (await callFunction("voce", { text, voice }, "blob")) as Blob;
+      } catch {
+        // Voce online non disponibile (limite gratuito, rete): legge la voce del browser.
+        if (mine === generation) await fallback.speak(text, voice);
+        return;
+      }
+      if (mine !== generation) return;
+      const el = element();
       const src = URL.createObjectURL(blob);
-      current?.pause();
-      const audio = new Audio(src);
-      current = audio;
-      await new Promise<void>((resolve) => {
-        audio.onended = () => resolve();
-        audio.onerror = () => resolve();
-        audio.onpause = () => resolve();
-        audio.play().catch(() => resolve());
+      el.pause();
+      el.src = src;
+      const played = await new Promise<boolean>((resolve) => {
+        el.onended = () => resolve(true);
+        el.onerror = () => resolve(false);
+        el.onpause = () => resolve(true);
+        el.play().catch(() => resolve(false));
       });
       URL.revokeObjectURL(src);
+      if (!played && mine === generation) await fallback.speak(text, voice);
     },
     stop() {
-      current?.pause();
-      current = null;
+      generation++;
+      audio?.pause();
+      fallback.stop();
+    },
+    unlock() {
+      const el = element();
+      el.src = SILENCE;
+      el.play().catch(() => {});
+      fallback.unlock();
     },
   };
 }

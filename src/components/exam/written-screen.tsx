@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { playSound } from "@/lib/sound";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { mutate } from "swr";
@@ -12,6 +11,7 @@ import { getAi } from "@/lib/ai";
 import { saveEvaluation } from "@/lib/exam";
 import { keys } from "@/lib/hooks";
 import { modeLabel, type Material, type Session, type Turn } from "@/lib/types";
+import { Preparing } from "./preparing";
 
 type Phase = "loading" | "generating" | "ready" | "submitting" | "error";
 
@@ -73,14 +73,17 @@ export function WrittenScreen() {
     setPhase("generating");
     setError(null);
     try {
-      const questions = await ai.examiner.writtenTest({
-        session: s,
-        materials: materialsRef.current.map(
-          ({ id: mid, name, text, role }) => ({ id: mid, name, text, role }),
-        ),
-        turns: [],
-        elapsedSec: 0,
-      });
+      const [questions] = await Promise.all([
+        ai.examiner.writtenTest({
+          session: s,
+          materials: materialsRef.current.map(
+            ({ id: mid, name, text, role }) => ({ id: mid, name, text, role }),
+          ),
+          turns: [],
+          elapsedSec: 0,
+        }),
+        new Promise((r) => setTimeout(r, 2500)),
+      ]);
       if (!questions.length)
         throw new Error("Non sono riuscito a preparare le domande. Riprova.");
       const created: Turn[] = [];
@@ -102,7 +105,6 @@ export function WrittenScreen() {
         );
       }
       setTurns(created);
-      playSound("start");
       setPhase("ready");
     } catch (e) {
       setPhase("error");
@@ -238,7 +240,7 @@ export function WrittenScreen() {
       await saveEvaluation(store, session, final, evaluation);
       sessionStorage.removeItem(`esame:${session.id}:tempo`);
       await mutate(keys.sessions);
-      router.replace(`/report/?id=${session.id}&fine=1`);
+      router.replace(`/report/?id=${session.id}`);
     } catch (e) {
       setPhase("error");
       setError({
@@ -294,28 +296,12 @@ export function WrittenScreen() {
         <p className="my-auto py-16 text-center text-ink-soft" aria-busy="true">
           Apro la prova…
         </p>
-      ) : phase === "generating" ? (
-        <div
-          className="mx-auto my-auto max-w-sm px-6 py-16 text-center"
-          aria-busy="true"
-          aria-live="polite"
-        >
-          <span className="mx-auto flex w-fit gap-1.5" aria-hidden="true">
-            {[0, 1, 2].map((i) => (
-              <span
-                key={i}
-                className="animate-status size-2.5 rounded-full bg-teal"
-                style={{ animationDelay: `${i * 180}ms` }}
-              />
-            ))}
-          </span>
-          <h1 className="mt-6 text-[1.75rem] leading-tight font-medium">
-            Preparo la tua prova…
-          </h1>
-          <p className="mt-3 leading-relaxed text-ink-soft">
-            L’AI sta scrivendo le domande sui tuoi materiali. Ci vuole qualche
-            secondo.
-          </p>
+      ) : phase === "generating" && session ? (
+        <div className="flex flex-1 px-4 sm:px-6">
+          <Preparing
+            title={session.title}
+            materials={materialsRef.current.map((m) => m.name)}
+          />
         </div>
       ) : phase === "error" ? (
         <div

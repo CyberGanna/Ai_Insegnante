@@ -118,7 +118,7 @@ export function DropZone() {
           "relative rounded-[var(--radius-card)] border-[1.5px] border-dashed px-5 py-8 text-center transition-colors sm:px-8 sm:py-10",
           dragging
             ? "border-teal bg-teal-soft/70"
-            : "border-[#cfc8b8] bg-card/60",
+            : "border-black/20 bg-card/60",
         )}
       >
         <div

@@ -87,7 +87,7 @@ export function SideModes({
                   className={cn(
                     "flex h-10 items-center rounded-xl pr-1 transition-colors",
                     whole
-                      ? "bg-gradient-to-b from-[#33c2b1] to-[#12877e] text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.45),0_8px_20px_-8px_rgb(45_212_191/0.7)]"
+                      ? "bg-white text-black shadow-[0_8px_20px_-10px_rgb(0_0_0/0.6)]"
                       : current
                         ? "text-white"
                         : "text-white/75 hover:bg-white/10 hover:text-white",
@@ -154,7 +154,7 @@ export function SideModes({
                             <span
                               className={cn(
                                 "size-1.5 shrink-0 rounded-full",
-                                active ? "bg-[#5eead4]" : "bg-white/40",
+                                active ? "bg-white" : "bg-white/40",
                               )}
                               aria-hidden="true"
                             />
@@ -179,7 +179,7 @@ export function SideModes({
       </ul>
       <Link
         href="/progetti/?nuova=1"
-        className="mt-1 flex h-10 items-center gap-3 rounded-xl px-3 text-[15px] text-[#5eead4] transition-colors hover:bg-white/10"
+        className="mt-1 flex h-10 items-center gap-3 rounded-xl px-3 text-[15px] text-white/85 transition-colors hover:bg-white/10"
       >
         <span
           className="grid w-5 place-items-center text-lg leading-none"
@@ -239,7 +239,7 @@ function AddSection({
       <button
         type="button"
         onClick={() => setAdding(true)}
-        className="flex h-9 w-full items-center gap-2 rounded-lg px-2.5 text-sm text-[#5eead4] transition-colors hover:bg-white/10"
+        className="flex h-9 w-full items-center gap-2 rounded-lg px-2.5 text-sm text-white/85 transition-colors hover:bg-white/10"
       >
         <span className="text-base leading-none" aria-hidden="true">
           +
@@ -275,7 +275,7 @@ function AddSection({
           mode === "colloquio" ? "Nome dell’azienda" : "Nome della materia"
         }
         aria-invalid={error ? true : undefined}
-        className="h-9 w-full rounded-lg bg-white/12 px-2.5 text-sm text-white ring-1 ring-white/25 placeholder:text-white/45 focus:ring-2 focus:ring-[#5eead4] focus:outline-none"
+        className="h-9 w-full rounded-lg bg-white/12 px-2.5 text-sm text-white ring-1 ring-white/25 placeholder:text-white/45 focus:ring-2 focus:ring-white focus:outline-none"
       />
       <p
         className={error ? "mt-1 px-1 text-xs text-[#fca5a5]" : "sr-only"}

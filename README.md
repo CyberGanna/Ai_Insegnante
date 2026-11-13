@@ -43,7 +43,7 @@ Importa il repository su Vercel (preset Next.js, nessuna modifica ai comandi) e 
 |---|---|---|---|
 | Cervello (domande, voto, lettura PDF e foto) | `LLM_PROVIDER` | `gemini` (versione gratuita di Google, con limiti giornalieri) | `anthropic` (Claude Sonnet 5.5) |
 | Trascrizione (risposte a voce, audio e video caricati) | `STT_PROVIDER` | `gemini` (automatico con `LLM_PROVIDER=gemini`) | `openai` (gpt-4o-mini-transcribe) |
-| Voce | `TTS_PROVIDER` | voce del browser: `NEXT_PUBLIC_AI_TTS=browser` nel sito | `elevenlabs` o `openai` |
+| Voce | `TTS_PROVIDER` | `gemini` (con `GEMINI_API_KEY`; se finisce il limite si usa la voce del browser) | `elevenlabs` o `openai` |
 
 Con `LLM_PROVIDER=compatibile` si usa qualunque servizio con API in stile OpenAI, per esempio OpenRouter per Qwen, DeepSeek o Llama (`LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`). Per leggere foto e PDF serve un modello che vede le immagini (per Qwen le versioni "VL"). Nelle versioni gratuite il fornitore può conservare i testi inviati: meglio non caricare dati personali.
 

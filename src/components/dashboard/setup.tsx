@@ -275,6 +275,7 @@ export function ExamSettings({
         value={duration}
         onChange={onDuration}
         options={[
+          { value: 5, label: "5 min" },
           { value: 10, label: "10 min" },
           { value: 20, label: "20 min" },
           { value: 40, label: "40 min" },

@@ -138,6 +138,7 @@ export const TEST_SCHEMA = {
 
 /** Quante domande, in base al tempo: circa 2-3 minuti per domanda aperta. */
 const WRITTEN_COUNT: Record<number, string> = {
+  5: "3 domande",
   10: "5 domande",
   20: "8 domande",
   40: "12 domande",
@@ -148,7 +149,7 @@ export function testPrompt(ctx: SessionContext): JsonRequest {
   const count = WRITTEN_COUNT[duration_min] ?? "8 domande";
   const mix = {
     interrogazione: `Prepara una verifica di ${count}: circa metà a crocette (4 opzioni, una sola corretta) e metà aperte. Copri argomenti diversi del materiale.`,
-    maturita: `Prepara una prova da ${duration_min} minuti: la prima voce è una traccia di elaborato (kind "traccia") che chiede di collegare almeno tre argomenti del materiale e altre discipline; poi ${duration_min >= 40 ? "4" : duration_min >= 20 ? "3" : "2"} domande aperte.`,
+    maturita: `Prepara una prova da ${duration_min} minuti: la prima voce è una traccia di elaborato (kind "traccia") che chiede di collegare almeno tre argomenti del materiale e altre discipline; poi ${duration_min >= 40 ? "4" : duration_min >= 20 ? "3" : duration_min >= 10 ? "2" : "1"} domande aperte.`,
     colloquio: `Prepara un test di selezione di ${count}: domande aperte su motivazione ed esperienza, casi pratici sul ruolo e alcune domande a crocette (4 opzioni) sui requisiti tecnici dell'annuncio.`,
   }[mode];
   return {

@@ -73,6 +73,8 @@ export interface TextToSpeech {
   readonly supported: boolean;
   speak(text: string, voice: Voice): Promise<void>;
   stop(): void;
+  /** Da chiamare dentro un clic: sblocca l’audio sui browser (Safari) che lo vietano senza un gesto. */
+  unlock(): void;
 }
 
 export interface AiProvider {
