@@ -119,14 +119,22 @@ const schemaHint = (schema: Record<string, unknown>) =>
 /** Google Gemini con la sua API nativa: legge PDF, immagini e audio direttamente. */
 function geminiLlm(): Llm {
   const key = Deno.env.get("GEMINI_API_KEY");
-  const model = Deno.env.get("GEMINI_MODEL") ?? "gemini-flash-latest";
+  const primary = Deno.env.get("GEMINI_MODEL") ?? "gemini-flash-latest";
+  // Se il modello principale è sovraccarico (503) si passa ai successivi: sono tutti gratuiti.
+  const models = [
+    primary,
+    ...(Deno.env.get("GEMINI_FALLBACK_MODELS") ?? "gemini-2.5-flash,gemini-flash-lite-latest,gemini-2.5-flash-lite")
+      .split(",")
+      .map((m) => m.trim())
+      .filter((m) => m && m !== primary),
+  ];
   return {
     async json<T>({ system, user, schema, attachments = [], maxTokens = 4000, fast = false }: JsonRequest) {
       const parts: unknown[] = attachments.map((a) => ({
         inline_data: { mime_type: a.kind === "pdf" ? "application/pdf" : a.mediaType, data: a.base64 },
       }));
       parts.push({ text: user });
-      const call = (thinking: boolean) =>
+      const call = (model: string, thinking: boolean) =>
         fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
           method: "POST",
           headers: { "x-goog-api-key": key ?? "", "Content-Type": "application/json" },
@@ -143,13 +151,18 @@ function geminiLlm(): Llm {
             },
           }),
         });
-      let res = await call(fast);
-      // Alcuni modelli non accettano il limite al ragionamento: si riprova senza.
-      if (fast && res.status === 400) res = await call(false);
-      // Modello sovraccarico (capita spesso sulla versione gratuita): un secondo tentativo.
-      if (res.status === 500 || res.status === 503) {
-        await new Promise((r) => setTimeout(r, 2000));
-        res = await call(false);
+      let res!: Response;
+      let model = primary;
+      for (const [i, m] of models.entries()) {
+        model = m;
+        res = await call(m, fast);
+        // Alcuni modelli non accettano il limite al ragionamento: si riprova senza.
+        if (fast && res.status === 400) res = await call(m, false);
+        // Sovraccarico o modello non disponibile: si prova il prossimo della lista.
+        if (![500, 503, 404].includes(res.status) || i === models.length - 1) break;
+        console.warn(`Gemini ${res.status} su ${m}, provo ${models[i + 1]}`);
+        await res.body?.cancel();
+        await new Promise((r) => setTimeout(r, 600));
       }
       if (res.status === 429) throw new Error("Limite gratuito di Gemini raggiunto: riprova tra poco.");
       if (!res.ok) {
